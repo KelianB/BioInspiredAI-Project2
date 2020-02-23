@@ -10,15 +10,15 @@ public interface IPopulation {
 	public List<IIndividual> getIndividuals();
 	
 	/**
+	 * Get the size of the population
+	 * @return the number of individuals in the population
+	 */
+	public int getSize();
+	
+	
+	/**
 	 * Get the individual that has the highest fitness in the population
 	 * @return the individual that has the highest fitness in the population
 	 */
 	public IIndividual getFittestIndividual();
-	
-	/**
-	 * Inserts offspring into the population.
-	 * The method used depends on the implementation (e.g. (lambda, mu) or (lambda+mu))
-	 * @param offspring - A list of individuals to be inserted in the population
-	 */
-	public void insertOffspring(List<IIndividual> offspring);
 }
