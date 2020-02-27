@@ -1,6 +1,5 @@
 package ga.segmentation;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import ga.IIndividual;
@@ -43,18 +42,10 @@ public class Individual implements IIndividual {
 		PrimMST minSpanningTree = new PrimMST(pi.getEuclideanDistanceGraph(), mstY * pi.getImage().getHeight() + mstX);
 		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
 		
-		/*for(int i = 0; i < minSpanningTree.getGraph().getNumVertices(); i++) {
-			String str = "";
-			for(int j = 0; j < minSpanningTree.getChildren(i).size(); j++)
-				str += minSpanningTree.getChildren(i).get(j) + ",";
-			System.out.println(str);
-		}*/
-		minSpanningTree.test();
-		
 		// Turn the MST into segments
 		System.out.println("Creating segmentation from minimum spanning tree...");
 		time = System.nanoTime();
-		//mstToSegmentation(pi, ind.representation, minSpanningTree);
+		mstToSegmentation(pi, ind.representation, minSpanningTree);
 		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
 				
 		
@@ -89,56 +80,34 @@ public class Individual implements IIndividual {
 
 		return neighbors;
 	}
-
-	public boolean sameSegment(int xi, int yi, int xj, int yj) {
-		if ((xi == xj) && (yi==yj)) {
-			return true;
-		}
-		if (this.representation[xi][yi]==Direction.NONE) {
-			return false;
-		}
-		else {
-			int [][] neighbors = getNeighbors (xi, yi);
-			boolean bool = false;
-			for (int i=0 ; i <neighbors[0].length ; i++) {
-				bool = bool || sameSegment(neighbors[i][0],neighbors[i][1], xj,yj);
-			}
-		}
-	}
-
-	public float dist (int xi, int yi, int xj, int yj) {
-		if (sameSegment(xi,yi,xj,yj)) {
-			return 0;
-		} else {
-
-		}
-	}
-
 	
 	public static void mstToSegmentation(ProblemInstance pbi, Direction[][] seg, PrimMST tree) {
 		int[] pos = pbi.pixelIndexToPos(tree.getRootVertex());
 		seg[pos[0]][pos[1]] = Direction.NONE;
 		segmentChildren(pbi, seg, tree, tree.getRootVertex());
+		
+		// Break single segment into multiple segment
+		int numSegments = 8 + (int) (Math.random() * 12);
+		for(int i = 0; i < numSegments; i++) {
+			int x = 0, y = 0;
+			do {
+				x = (int) (Math.random() * seg.length);
+				y = (int) (Math.random() * seg[0].length);
+			}
+			while(seg[x][y] == Direction.NONE);
+			seg[x][y] = Direction.NONE;
+		}
 	}
 	
-	private static List<Integer> visited = new ArrayList<Integer>();
 	private static void segmentChildren(ProblemInstance pbi, Direction[][] seg, PrimMST tree, int vertex) {
 		List<Integer> children = tree.getChildren(vertex);
 		int[] pos = pbi.pixelIndexToPos(vertex);
 		
-		if(visited.contains(vertex))
-			System.out.println("Already visited " + vertex);
-		
-		visited.add(vertex);
-		
 		for(int i = 0; i < children.size(); i++) {
 			int child = children.get(i);
 			int[] pos2 = pbi.pixelIndexToPos(child);
-			Direction d = pbi.getDirection(pos2[0], pos2[1], pos[0], pos[1]);
-			seg[pos2[0]][pos2[1]] = d;
+			seg[pos2[0]][pos2[1]] = pbi.getDirection(pos2[0], pos2[1], pos[0], pos[1]);
 			segmentChildren(pbi, seg, tree, child);
-		}
-		
+		}	
 	}
-
 }
