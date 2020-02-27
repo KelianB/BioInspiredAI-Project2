@@ -7,10 +7,13 @@ import ga.IIndividual;
 import problem.segmentation.ProblemInstance;
 import utils.PrimMST;
 
+import static problem.segmentation.ProblemInstance.euclideanDistance;
+
 public class Individual implements IIndividual {
 	public static enum Direction {NONE, UP, RIGHT, DOWN, LEFT}
 	
 	private Direction[][] representation;
+	private ProblemInstance pi;
 	
 	public Individual(ProblemInstance pi) {
 		this.representation = new Direction[pi.getImage().getWidth()][pi.getImage().getHeight()];
@@ -90,31 +93,70 @@ public class Individual implements IIndividual {
 		return neighbors;
 	}
 
+	public LinkedList<Segment> getSegmentation () {
+
+		LinkedList<Segment> segmentation_list = new LinkedList<Segment>();
+
+		return segmentation_list;
+	}
+
+	public Segment[][] getSegmentation () {
+
+		Segment[][] segmentation_number = new Segment[this.representation[0].length][this.representation.length];
+
+		return segmentation_number;
+	}
+
 	public boolean sameSegment(int xi, int yi, int xj, int yj) {
-		if ((xi == xj) && (yi==yj)) {
-			return true;
-		}
-		if (this.representation[xi][yi]==Direction.NONE) {
-			return false;
-		}
-		else {
-			int [][] neighbors = getNeighbors (xi, yi);
-			boolean bool = false;
-			for (int i=0 ; i <neighbors[0].length ; i++) {
-				bool = bool || sameSegment(neighbors[i][0],neighbors[i][1], xj,yj);
-			}
-		}
+
 	}
 
 	public float dist (int xi, int yi, int xj, int yj) {
 		if (sameSegment(xi,yi,xj,yj)) {
 			return 0;
 		} else {
-
+			return euclideanDistance(pi.getRGB(xi, yi), pi.getRGB(xj, yj);
 		}
 	}
 
-	
+	public float edgeValue () {
+		float edgeValue = 0;
+		for (int i=0 ; i < this.representation[0].length ; i++) {
+			for (int j=0 ; j < this.representation.length ; j++) {
+				int [][] neighbors = getNeighbors (i, j);
+				float sum_neighbors = 0;
+				for (int n=0 ; n <neighbors[0].length ; n++) {
+					sum_neighbors+=dist(i,j,neighbors[i][0],neighbors[i][1]);
+				}
+				edgeValue+=sum_neighbors;
+			}
+		}
+		return edgeValue;
+	}
+
+	public float connectivity () {
+		float connectivity = 0;
+		for (int i=0 ; i < this.representation[0].length ; i++) {
+			for (int j=0 ; j < this.representation.length ; j++) {
+				int [][] neighbors = getNeighbors (i, j);
+				float sum_neighbors = 0;
+				for (int n=0 ; n <neighbors[0].length ; n++) {
+					if (!sameSegment(i,j,neighbors[i][0],neighbors[i][1])) {
+						sum_neighbors+=1/8;
+					}
+				}
+				connectivity+=sum_neighbors;
+			}
+		}
+		return connectivity;
+	}
+
+	public float overallDeviation () {
+		float overallDeviation=0;
+
+	}
+
+
 	public static void mstToSegmentation(ProblemInstance pbi, Direction[][] seg, PrimMST tree) {
 		int[] pos = pbi.pixelIndexToPos(tree.getRootVertex());
 		seg[pos[0]][pos[1]] = Direction.NONE;
