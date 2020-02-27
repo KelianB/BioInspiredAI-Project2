@@ -49,10 +49,7 @@ public class Population implements IPopulation {
 			LinkedList<Individual> Si = new LinkedList<Individual>();
 			int ni=0;
 			for (Individual j : this.individuals) {
-				if (i.edgeValue() < j.edgeValue() && i.connectivity()<j.connectivity() && i.overallDeviation() < j.overallDeviation()) {
-					Si.add(j);
-				}
-				else {
+				if !(i.edgeValue() < j.edgeValue() && i.connectivity()<j.connectivity() && i.overallDeviation() < j.overallDeviation()) {
 					ni++;
 				}
 			}
@@ -60,18 +57,28 @@ public class Population implements IPopulation {
 				F1.add(i);
 			}
 		}
-		fronts.add(F1);
+
+		F1.add(fronts);
 		LinkedList<Individual> currentFi = new LinkedList<Individual>(F1);
 		while (!currentFi.isEmpty()) {
 			LinkedList<Individual> Q = new LinkedList<Individual>();
 			for (Individual i : currentFi) {
-
+				LinkedList<Individual> Si = new LinkedList<Individual>();
+				for (Individual j : this.individuals) {
+					if (i.edgeValue() < j.edgeValue() && i.connectivity()<j.connectivity() && i.overallDeviation() < j.overallDeviation()) {
+						Si.add(j);
+					}
+				}
+				int nj=0;
+				for (Individual j : Sp) {
+					nj--;
+					if (nj==0) {
+						Q.add(j);
+					}
+				}
 			}
-
+			currentFi = new LinkedList<Individual>(Q);;
+			fronts.add(currentFi);
 		}
-
-
-
-
 	}
 }
