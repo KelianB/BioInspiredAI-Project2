@@ -1,15 +1,20 @@
 package ga.segmentation;
 
-public class Segment {
+import java.util.ArrayList;
+import java.util.List;
 
-    private LinkedList<int[]> pixels;
+public class Segment {
+    private List<Integer> pixels;
 
     public Segment () {
-        this.pixels = new LinkedList<int[]>();
+        this.pixels = new ArrayList<Integer>();
+    }
+    
+    public void addPixel(int i) {
+    	this.pixels.add(i);
     }
 
-    public LinkedList<int[]> getPixels () {
+    public List<Integer> getPixels () {
         return this.pixels;
     }
-
 }

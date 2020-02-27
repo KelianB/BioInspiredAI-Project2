@@ -64,10 +64,27 @@ public class ProblemInstance implements IProblemInstance {
 		return rgb[x][y];
 	}
 	
+	public int[] getRGB(int i) {
+		int[] pos = pixelIndexToPos(i);
+		return rgb[pos[0]][pos[1]];
+	}
+	
 	public int[] pixelIndexToPos(int index) {
 		int x = index % getImage().getWidth();
 		int y = (index  - x) / getImage().getWidth();
 		return new int[] {x, y};
+	}
+	
+	/* Get the direction to go from a pixel to a given adjacent one.
+	 * @param i - The source pixel index
+	 * @param j - The destination pixel index
+	 * @return the direction to go from a pixel to a given adjacent one (e.g. from i=0 to j=1 direction is RIGHT), or Direction.NONE if 
+	 * given pixels aren't adjacent
+	 */
+	public Direction getDirection(int i, int j) {
+		int[] pos1 = pixelIndexToPos(i);
+		int[] pos2 = pixelIndexToPos(j);
+		return getDirection(pos1[0], pos1[1], pos2[0], pos2[1]);
 	}
 	
 	/**
@@ -86,7 +103,7 @@ public class ProblemInstance implements IProblemInstance {
 			else if(xto == xfrom - 1)
 				return Direction.LEFT;
 		}
-		else if(xto == xfrom) {
+		else if(xfrom == xto) {
 			if(yto == yfrom + 1)
 				return Direction.DOWN;
 			else if(yto == yfrom - 1)
@@ -113,6 +130,7 @@ public class ProblemInstance implements IProblemInstance {
 		return (float) Math.sqrt(sumOfSquares);
 	}
 	
+	
 	private static BufferedImage scaleImage(BufferedImage img, float scale) {
 		BufferedImage resized = new BufferedImage((int) (img.getWidth() * scale), (int) (img.getHeight() * scale), img.getType());
 		Graphics2D g = resized.createGraphics();
@@ -120,7 +138,6 @@ public class ProblemInstance implements IProblemInstance {
 		g.drawImage(img, 0, 0, resized.getWidth(), resized.getHeight(), 0, 0, img.getWidth(), img.getHeight(), null);
 		g.dispose();
 		return resized;
-		
 	}
 	
 }

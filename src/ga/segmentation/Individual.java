@@ -1,25 +1,34 @@
 package ga.segmentation;
 
+import static problem.segmentation.ProblemInstance.euclideanDistance;
+
+import java.util.ArrayList;
 import java.util.List;
 
 import ga.IIndividual;
 import problem.segmentation.ProblemInstance;
 import utils.PrimMST;
 
-import static problem.segmentation.ProblemInstance.euclideanDistance;
-
 public class Individual implements IIndividual {
 	public static enum Direction {NONE, UP, RIGHT, DOWN, LEFT}
 	
-	private Direction[][] representation;
+	private Direction[] representation;
 	private ProblemInstance pi;
 	
+	private List<Segment> segments;
+	private int[] pixelSegments;
+	
 	public Individual(ProblemInstance pi) {
-		this.representation = new Direction[pi.getImage().getWidth()][pi.getImage().getHeight()];
+		this.pi = pi;
+		this.representation = new Direction[pi.getImage().getWidth() * pi.getImage().getHeight()];
 	}
 	
 	@Override
 	public float getFitness() {
+		updateSegmentRepresentation();
+		System.out.println("Edge value: " + edgeValue());
+		System.out.println("Connectivity: " + connectivity());
+		System.out.println("Overall deviation: " + overallDeviation());
 		return 0;
 	}
 
@@ -50,130 +59,195 @@ public class Individual implements IIndividual {
 		time = System.nanoTime();
 		mstToSegmentation(pi, ind.representation, minSpanningTree);
 		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
-				
 		
 		return ind;
 	}
 
-	public int[][] getNeighbors (int xi, int yi) {
+	public List<Integer> getNeighbors(int i) {
+		List<Integer> neighbors = new ArrayList<>();
 
-		int[][] neighbors = new int[4][2];
-		int n = 0;
-
-		if (xi < this.representation[0].length-1 && (representation[xi][yi]==Direction.DOWN || representation[xi+1][yi]==Direction.UP)) {
-			neighbors[n][0] = xi+1;
-			neighbors[n][1] = yi;
-			n++;
+		for(Direction d : Direction.values()) {
+			int pixel = getPixelIndex(i, d);
+			if(pixel != -1)
+				neighbors.add(pixel);
 		}
-		if (xi>0 && (representation[xi][yi]==Direction.UP || representation[xi-1][yi]==Direction.DOWN)) {
-			neighbors[n][0] = xi-1;
-			neighbors[n][1] = yi;
-			n++;
-		}
-		if (yi < this.representation.length-1 && (representation[xi][yi]==Direction.RIGHT || representation[xi][yi+1]==Direction.LEFT)) {
-			neighbors[n][0] = xi;
-			neighbors[n][1] = yi+1;
-			n++;
-		}
-		if (yi>0 && (representation[xi][yi]==Direction.LEFT || representation[xi][yi-1]==Direction.RIGHT)) {
-			neighbors[n][0] = xi;
-			neighbors[n][1] = yi-1;
-			n++;
-		}
-
+		
 		return neighbors;
 	}
 
 
-	public LinkedList<Segment> getSegmentation () {
-
-		LinkedList<Segment> segmentationList = new LinkedList<Segment>();
-
-		return segmentationList;
+	public boolean sameSegment(int i, int j) {
+		return pixelSegments[i] == pixelSegments[j];
 	}
 
-	public Segment[][] getSegmentation () {
-
-		Segment[][] segmentationNumber = new Segment[this.representation[0].length][this.representation.length];
-
-		return segmentationNumber;
+	public float dist(int i, int j) {
+		return sameSegment(i, j) ? 0 : euclideanDistance(pi.getRGB(i), pi.getRGB(j));
 	}
 
-	public boolean sameSegment(int xi, int yi, int xj, int yj) {
-
-	}
-
-	public float dist (int xi, int yi, int xj, int yj) {
-		if (sameSegment(xi,yi,xj,yj)) {
-			return 0;
-		} else {
-			return euclideanDistance(pi.getRGB(xi, yi), pi.getRGB(xj, yj);
-		}
-	}
-
-	public float edgeValue () {
+	public float edgeValue() {
 		float edgeValue = 0;
-		for (int i=0 ; i < this.representation[0].length ; i++) {
-			for (int j=0 ; j < this.representation.length ; j++) {
-				int [][] neighbors = getNeighbors (i, j);
-				float sum_neighbors = 0;
-				for (int n=0 ; n <neighbors[0].length ; n++) {
-					sum_neighbors+=dist(i,j,neighbors[i][0],neighbors[i][1]);
-				}
-				edgeValue+=sum_neighbors;
-			}
+		for(int i = 0 ; i < this.representation.length; i++) {
+			for(int n : getNeighbors(i))
+				edgeValue += dist(i, n);
 		}
 		return edgeValue;
 	}
 
-	public float connectivity () {
-		float connectivity = 0;
-		for (int i=0 ; i < this.representation[0].length ; i++) {
-			for (int j=0 ; j < this.representation.length ; j++) {
-				int [][] neighbors = getNeighbors (i, j);
-				float sum_neighbors = 0;
-				for (int n=0 ; n <neighbors[0].length ; n++) {
-					if (!sameSegment(i,j,neighbors[i][0],neighbors[i][1])) {
-						sum_neighbors+=1/8;
-					}
-				}
-				connectivity+=sum_neighbors;
+	public float connectivity() {
+		float connectivity = 0.0f;
+		for(int i = 0; i < this.representation.length; i++) {
+			for(int n : getNeighbors(i)) {
+				if(!sameSegment(i,n))
+					connectivity += 1.0/8;
 			}
 		}
 		return connectivity;
 	}
 
-	public float overallDeviation () {
-		float overallDeviation=0;
-
-	}
-
-	public static void mstToSegmentation(ProblemInstance pbi, Direction[][] seg, PrimMST tree) {
-		int[] pos = pbi.pixelIndexToPos(tree.getRootVertex());
-		seg[pos[0]][pos[1]] = Direction.NONE;
-		segmentChildren(pbi, seg, tree, tree.getRootVertex());
+	public float overallDeviation() {
+		float overallDeviation = 0;
 		
-		// Break single segment into multiple segment
-		int numSegments = 8 + (int) (Math.random() * 12);
-		for(int i = 0; i < numSegments; i++) {
-			int x = 0, y = 0;
-			do {
-				x = (int) (Math.random() * seg.length);
-				y = (int) (Math.random() * seg[0].length);
+		// For each segment
+		for(int s = 0; s < segments.size(); s++) {
+			// First compute the centroid
+			float[] centroid = new float[3];
+			float numPixels = segments.get(s).getPixels().size();
+			for(int i : segments.get(s).getPixels()) {
+				int[] rgb = pi.getRGB(i);
+				centroid[0] += rgb[0] / numPixels;
+				centroid[1] += rgb[1] / numPixels;
+				centroid[2] += rgb[2] / numPixels;
 			}
-			while(seg[x][y] == Direction.NONE);
-			seg[x][y] = Direction.NONE;
+			
+			// Then update the deviation
+			for(int i : segments.get(s).getPixels()) {
+				int[] rgb = pi.getRGB(i);
+				
+				overallDeviation += Math.sqrt(
+					Math.pow(rgb[0]-centroid[0], 2) +
+					Math.pow(rgb[1]-centroid[1], 2) +
+					Math.pow(rgb[2]-centroid[2], 2)
+				);
+			}
+		}
+		return overallDeviation;
+	}
+	
+	private int currentSegmentIndex;
+
+	private void assignSegment(int i, List<Integer> visited) {
+		int j = getPixelIndex(i, representation[i]);
+		if(j == -1 || visited.contains(i)) {
+			visited.add(i);
+			pixelSegments[i] = currentSegmentIndex++;
+		}
+		else {
+			visited.add(i);
+			if(pixelSegments[j] == -1)
+				assignSegment(j, visited);
+			pixelSegments[i] = pixelSegments[j];
 		}
 	}
 	
-	private static void segmentChildren(ProblemInstance pbi, Direction[][] seg, PrimMST tree, int vertex) {
-		List<Integer> children = tree.getChildren(vertex);
-		int[] pos = pbi.pixelIndexToPos(vertex);
+	private void updateSegmentRepresentation() {
+		currentSegmentIndex = 0;
 		
+		// First assign each pixel to its segment
+		pixelSegments = new int[representation.length];
+		for(int i = 0; i < pixelSegments.length; i++)
+			pixelSegments[i] = -1;
+		for(int i = 0; i < pixelSegments.length; i++) {
+			if(pixelSegments[i] == -1)
+				assignSegment(i, new ArrayList<Integer>());
+		}
+
+		// Create representation as list of segments
+
+		// Start by creating the right amount of empty segments
+		segments = new ArrayList<Segment>();
+		for(int i = 0; i <= currentSegmentIndex; i++)
+			segments.add(new Segment());
+		// Then add the pixels to the right segments
+		for(int i = 0; i < pixelSegments.length; i++)
+			segments.get(pixelSegments[i]).addPixel(i);	
+	}
+	
+	/**
+	 * Get the pixel in a given direction from a source pixel/
+	 * @param source - A pixel index
+	 * @param dir - A direction
+	 * @return the pixel in the given direction from the source.
+	 */
+	public int getPixelIndex(int source, Direction dir) {
+		int none = -1;
+		int w = pi.getImage().getWidth();
+				
+		switch(dir) {
+			case NONE:
+				return none;
+			case LEFT:
+				if(source % w == 0)
+					return none;
+				return source - 1;
+			case RIGHT:
+				if(source % w == w - 1)
+					return none;
+				return source + 1;
+			case UP:
+				if(source < w)
+					return none;
+				return source - w;
+			case DOWN:
+				if(source >= w * (pi.getImage().getHeight()-1))
+					return none;
+				return source + w;
+			default:
+				return none;
+		}	
+	}
+	
+	public List<Segment> getSegments() {
+		return segments;
+	}
+
+	public int[] getPixelSegments() {
+		return pixelSegments;
+	}
+	
+	public void print() {
+		String str = "";
+		for(int i = 0; i < representation.length; i++) {
+			if(i % pi.getImage().getWidth() == 0) {
+				System.out.println(str);
+				str = "";
+			}
+			str += pixelSegments[i] + " ";
+		}
+		System.out.println(str);
+	}
+	
+	public static void mstToSegmentation(ProblemInstance pbi, Direction[] seg, PrimMST tree) {
+		seg[tree.getRootVertex()] = Direction.NONE;
+		segmentChildren(pbi, seg, tree, tree.getRootVertex());
+		
+		// Break single segment into multiple segment
+		int numSegments = 4 + (int) (Math.random() * 6);
+		for(int i = 0; i < numSegments; i++) {
+			int rdPos;
+			do {
+				rdPos = (int) (Math.random() * seg.length);
+			}
+			while(seg[rdPos] == Direction.NONE);
+			seg[rdPos] = Direction.NONE;
+		}
+	}
+	
+	private static void segmentChildren(ProblemInstance pbi, Direction[] seg, PrimMST tree, int vertex) {
+		List<Integer> children = tree.getChildren(vertex);
+
 		for(int i = 0; i < children.size(); i++) {
 			int child = children.get(i);
-			int[] pos2 = pbi.pixelIndexToPos(child);
-			seg[pos2[0]][pos2[1]] = pbi.getDirection(pos2[0], pos2[1], pos[0], pos[1]);
+			seg[child] = pbi.getDirection(child, vertex);
 			segmentChildren(pbi, seg, tree, child);
 		}	
 	}

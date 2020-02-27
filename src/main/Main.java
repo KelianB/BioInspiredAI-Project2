@@ -28,6 +28,9 @@ public class Main {
 		 
 		System.out.println("Image size: " + instance.getImage().getWidth() + " x " + instance.getImage().getHeight());
 		System.out.println("Creating a random individual:");
-		Individual.createRandomIndividual(instance );
+		Individual ind = Individual.createRandomIndividual(instance);
+		ind.getFitness();
+		ind.print();
+		System.out.println("Number of segments: " + ind.getSegments().size());
 	}
 }
