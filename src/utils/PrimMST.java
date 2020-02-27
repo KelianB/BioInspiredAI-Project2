@@ -56,18 +56,17 @@ public class PrimMST {
 
 		// Always include first 1st vertex in MST. 
 		key.get(startingNode).setKey(0); // Set key value of first vertex to 0 so that it is picked as first vertex 
+		parent[startingNode] = -1;
 		Collections.sort(key);
 		
-		for(int count = 0; count < graph.getNumVertices() - 1; count++) { 
-			if(count % 10000 == 0)
-				System.out.println(count + "/" + graph.getNumVertices());
+		for(int count = 0; count < graph.getNumVertices(); count++) { 
+			//if(count % 10000 == 0)
+				//System.out.println(count + "/" + graph.getNumVertices());
 			// Pick the minimum key vertex from the set of vertices not yet included in MST 
 			// int u = minKey(key, mstSet); 
+
 			int u = key.get(0).getVertex();
-			
-			if(mstSet[u])
-				System.out.println("true");
-			
+						
 			// Add the picked vertex to the MST Set 
 			mstSet[u] = true; 
 			key.remove(0);
@@ -79,7 +78,6 @@ public class PrimMST {
 				// graph[u][v] is non zero only for adjacent vertices of m 
 				// mstSet[v] is false for vertices not yet included in MST 
 				// Update the key only if graph[u][v] is smaller than key[v] 
-				
 				if(!mstSet[v]) {
 					VertexKeyPair pair = keyMap[v];
 					if(conn.getWeight() < pair.getKey()) {
@@ -90,23 +88,15 @@ public class PrimMST {
 					}
 				}
 			}
-			
-			/*for (int v = 0; v < graph.getNumVertices(); v++) {
-				// graph[u][v] is non zero only for adjacent vertices of m 
-				// mstSet[v] is false for vertices not yet included in MST 
-				// Update the key only if graph[u][v] is smaller than key[v] 
-				if (graph[u][v] != 0 && mstSet[v] == false && graph[u][v] < key[v]) { 
-					parent[v] = u; 
-					key[v] = graph[u][v]; 
-				} 
-			}*/
 		}
 		
 		this.children = (ArrayList<Integer>[]) (new ArrayList[graph.getNumVertices()]); 
 		for(int i = 0; i < children.length; i++)
 			children[i] = new ArrayList<Integer>();
-		for(int i = 0; i < parent.length; i++)
-			children[parent[i]].add(i);
+		for(int i = 0; i < parent.length; i++) {
+			if(parent[i] != -1)
+				children[parent[i]].add(i);
+		}
 
 	} 
 	
@@ -133,13 +123,15 @@ public class PrimMST {
 		}
 	}
 
-	/*@Override
+	@Override
 	public String toString() {
-		String str = "Edge \tWeight"; 
-		for (int i = 1; i < graph.getNumVertices(); i++)
-			str += "\n" + parent[i] + " - " + i + "\t" + graph.getWeight(i, parent[i]);
+		String str = "Edge\n"; 
+		for(int i = 1; i < getGraph().getNumVertices(); i++) 
+			str += parent[i] + " - " + i;
 		return str;
-	}*/
+	}
+		  
+
 	
 	public List<Integer> getChildren(int vertex) {
 		return children[vertex];
@@ -189,6 +181,11 @@ public class PrimMST {
 		@Override
 		public int compareTo(VertexKeyPair pair) {
 			return (int) Math.signum(getKey() - pair.getKey());
+		}
+		
+		@Override
+		public String toString() {
+			return "(vertex= " + getVertex() + ", key= " + getKey() + ")";
 		}
 	}
 	
