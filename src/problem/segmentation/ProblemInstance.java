@@ -105,7 +105,7 @@ public class ProblemInstance implements IProblemInstance {
 	 * @param rgb2 - Another [red, green blue] array
 	 * @return the euclidean distance between the two RGBs.
 	 */
-	private static float euclideanDistance(int[] rgb1, int[] rgb2) {
+	public static float euclideanDistance(int[] rgb1, int[] rgb2) {
 		float sumOfSquares = 0.0f;
 		for(int i = 0; i < rgb1.length; i++) {
 			sumOfSquares += Math.pow(rgb1[i] - rgb2[i], 2);
