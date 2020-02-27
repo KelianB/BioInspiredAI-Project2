@@ -41,6 +41,17 @@ public class Config {
 	}
 	
 	/**
+	 * Get a float property with a given key
+	 * @param key - A property key
+	 * @return the property associated with the given key
+	 */
+	public float getFloat(String key) {
+		return Float.parseFloat(get(key));
+	}
+	
+	
+	
+	/**
 	 * Parses a configuration file with a given name
 	 * @param fileName - The name of the configuration file, e.g. config.properties  
 	 * @throws FileNotFoundException

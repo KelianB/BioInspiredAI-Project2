@@ -11,9 +11,11 @@ import problem.ProblemReadingException;
 
 public class ProblemReader implements IProblemReader {
 	private String baseDir;
+	private float imageScaling;
 	
-	public ProblemReader(String baseDir) {
+	public ProblemReader(String baseDir, float imageScaling) {
 		this.baseDir = baseDir;
+		this.imageScaling = imageScaling;
 	}
 	
 	@Override
@@ -29,6 +31,6 @@ public class ProblemReader implements IProblemReader {
 			throw new ProblemReadingException();
 		}
 		
-		return new ProblemInstance(img);
+		return new ProblemInstance(img, imageScaling);
 	}
 }
