@@ -1,5 +1,6 @@
 package main;
 
+import ga.segmentation.Individual;
 import problem.ProblemReadingException;
 import problem.segmentation.ProblemInstance;
 import problem.segmentation.ProblemReader;
@@ -13,18 +14,20 @@ public class Main {
 		config = new Config("config.properties");
 		
 		// Create a problem reader
-		ProblemReader reader = new ProblemReader(PROBLEMS_DIR);
+		ProblemReader reader = new ProblemReader(PROBLEMS_DIR, config.getFloat("imageScaling"));
 		
 		// Read a problem instance
-		ProblemInstance test = null;
+		ProblemInstance instance = null;
 		try {
-			test = reader.readProblem("86016");
+			instance = reader.readProblem("86016");
 		}
 		catch(ProblemReadingException e) {
 			System.err.println("Couldn't read problem instance.");
 			e.printStackTrace();
 		}
 		 
-		System.out.println(test.getImage().getWidth() + " " + test.getImage().getHeight());
+		System.out.println("Image size: " + instance.getImage().getWidth() + " x " + instance.getImage().getHeight());
+		System.out.println("Creating a random individual:");
+		Individual.createRandomIndividual(instance );
 	}
 }
