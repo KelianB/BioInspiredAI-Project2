@@ -12,17 +12,25 @@ import problem.IProblemInstance;
 import utils.WeightedGraph;
 
 public class ProblemInstance implements IProblemInstance {
+	// The problem instance's image
 	private BufferedImage image;
 	
+	// Store the RGB of each pixel as a matrix of [r, g, b] integer arrays
 	private int[][][] rgb;
+	
 	private WeightedGraph euclideanDistanceGraph;
 	
+	/**
+	 * Create a new problem instances
+	 * @param originalImage - An image
+	 * @param imageScaling - A ratio by which to scale the input image
+	 */
 	public ProblemInstance(BufferedImage originalImage, float imageScaling) {
 		this.image = imageScaling == 1 ? originalImage : scaleImage(originalImage, imageScaling);
 		
 		int w = image.getWidth(), h = image.getHeight();
 		
-		// Store the RGB of each pixel in a width x height x 3 array
+		// Store the RGB of each pixel in a three dimensional array of shape (width, height, 3
 		rgb = new int[w][h][3];
 		for(int x = 0; x < w; x++) {
 			for(int y = 0; y < h; y++) {
@@ -56,30 +64,50 @@ public class ProblemInstance implements IProblemInstance {
 		}
 	}
 	
+	/**
+	 * Get the image of this problem instance.
+	 * @return the image
+	 */
 	public BufferedImage getImage() {
 		return image;
 	}
 	
+	/**
+	 * Get the RGB at a given position of the image.
+	 * @param x - A horizontal position
+	 * @param y - A vertical position
+	 * @return the rgb at position (x, y), as a [r, g, b] float array
+	 */
 	public int[] getRGB(int x, int y) {
 		return rgb[x][y];
 	}
 	
+	/**
+	 * Get the RGB of a given pixel index in the image.
+	 * @param i - A pixel index (between 0 and width*height)
+	 * @return the rgb at pixel index i, as a [r, g, b] float array
+	 */
 	public int[] getRGB(int i) {
 		int[] pos = pixelIndexToPos(i);
 		return rgb[pos[0]][pos[1]];
 	}
 	
+	/**
+	 * Project a 1D pixel index into a 2D position
+	 * @param index - A pixel index
+	 * @return the corresponding position, as a [x, y] int array
+	 */
 	public int[] pixelIndexToPos(int index) {
 		int x = index % getImage().getWidth();
 		int y = (index  - x) / getImage().getWidth();
 		return new int[] {x, y};
 	}
 	
-	/* Get the direction to go from a pixel to a given adjacent one.
+	/** Get the direction to go from a pixel to a given adjacent one.
 	 * @param i - The source pixel index
 	 * @param j - The destination pixel index
-	 * @return the direction to go from a pixel to a given adjacent one (e.g. from i=0 to j=1 direction is RIGHT), or Direction.NONE if 
-	 * given pixels aren't adjacent
+	 * @return the direction to go from a pixel to a given adjacent one (e.g. from i=0 to j=1 direction is RIGHT), 
+	 * or Direction.NONE if the given pixels aren't adjacent
 	 */
 	public Direction getDirection(int i, int j) {
 		int[] pos1 = pixelIndexToPos(i);
@@ -93,8 +121,8 @@ public class ProblemInstance implements IProblemInstance {
 	 * @param yfrom - The source y position
 	 * @param xto - The destination x position
 	 * @param yto - The destination y position
-	 * @return the direction to go from a pixel to a given adjacent one (e.g. from x=0,y=0 to x=1,y=0, direction is RIGHT), or Direction.NONE if 
-	 * given pixels aren't adjacent
+	 * @return the direction to go from a pixel to a given adjacent one (e.g. from x=0,y=0 to x=1,y=0, direction is RIGHT),
+	 * or Direction.NONE if given pixels aren't adjacent
 	 */
 	public Direction getDirection(int xfrom, int yfrom, int xto, int yto) {
 		if(yfrom == yto) {
@@ -112,10 +140,6 @@ public class ProblemInstance implements IProblemInstance {
 		return Direction.NONE;
 	}
 	
-	public WeightedGraph getEuclideanDistanceGraph() {
-		return euclideanDistanceGraph;
-	}
-	
 	/**
 	 * Calculates the euclidean distance between two RGB arrays.
 	 * @param rgb1 - A [red, green blue] array
@@ -130,7 +154,12 @@ public class ProblemInstance implements IProblemInstance {
 		return (float) Math.sqrt(sumOfSquares);
 	}
 	
-	
+	/**
+	 * Scales a given image at a given ratio.
+	 * @param img - A buffered image
+	 * @param scale - A scaling ratio
+	 * @return the scaling image
+	 */
 	private static BufferedImage scaleImage(BufferedImage img, float scale) {
 		BufferedImage resized = new BufferedImage((int) (img.getWidth() * scale), (int) (img.getHeight() * scale), img.getType());
 		Graphics2D g = resized.createGraphics();
@@ -140,4 +169,7 @@ public class ProblemInstance implements IProblemInstance {
 		return resized;
 	}
 	
+	public WeightedGraph getEuclideanDistanceGraph() {
+		return euclideanDistanceGraph;
+	}
 }

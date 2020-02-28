@@ -4,7 +4,7 @@ import java.util.List;
 
 public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	private int generationsRan;
-	private Population population;
+	private IPopulation population;
 	
 	public GeneticAlgorithm() {
 		generationsRan = 0;
@@ -19,7 +19,7 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 		population = createInitialPopulation();
 	}
 	
-	public abstract Population createInitialPopulation();
+	public abstract IPopulation createInitialPopulation();
 	
 	@Override
 	public void runGeneration() {		
@@ -47,7 +47,7 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	}
 
 	@Override
-	public Population getPopulation() {
+	public IPopulation getPopulation() {
 		return population;
 	}
 }

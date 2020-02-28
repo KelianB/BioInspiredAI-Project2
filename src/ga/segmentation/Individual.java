@@ -3,7 +3,10 @@ package ga.segmentation;
 import static problem.segmentation.ProblemInstance.euclideanDistance;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ga.IIndividual;
 import problem.segmentation.ProblemInstance;
@@ -12,11 +15,15 @@ import utils.PrimMST;
 public class Individual implements IIndividual {
 	public static enum Direction {NONE, UP, RIGHT, DOWN, LEFT}
 	
+	// Store the segmentation as an array of directions.
 	private Direction[] representation;
-	private ProblemInstance pi;
 	
+	// Store the segmentation as a list of segments
 	private List<Segment> segments;
+	// Store the segmentation as a segment matrix
 	private int[] pixelSegments;
+	
+	private ProblemInstance pi;
 	
 	public Individual(ProblemInstance pi) {
 		this.pi = pi;
@@ -42,48 +49,76 @@ public class Individual implements IIndividual {
 		return null;
 	}
 	
+	/**
+	 * Create an individual using a minimum spanning tree
+	 * @param pi - The problem instance for which to create a new individual
+	 * @return a new individual
+	 */
 	public static Individual createRandomIndividual(ProblemInstance pi) {
 		Individual ind = new Individual(pi);
 		
-		// Generate a random position as the origin of the min spanning tree
-		int mstX = (int) Math.floor(Math.random() * pi.getImage().getWidth());
-		int mstY = (int) Math.floor(Math.random() * pi.getImage().getHeight());
+		// Generate a random position as the origin of the minimum spanning tree
+		int startingPos = (int) (Math.random() * pi.getImage().getWidth() * pi.getImage().getHeight());
 	
+		// Generate the minimum spanning tree
 		System.out.println("Generating minimum spanning tree...");
 		long time = System.nanoTime();
-		PrimMST minSpanningTree = new PrimMST(pi.getEuclideanDistanceGraph(), mstY * pi.getImage().getHeight() + mstX);
+		PrimMST minSpanningTree = new PrimMST(pi.getEuclideanDistanceGraph(), startingPos);
 		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
 		
-		// Turn the MST into segments
+		// Turn the minimum spanning tree into a segmentation
 		System.out.println("Creating segmentation from minimum spanning tree...");
 		time = System.nanoTime();
-		mstToSegmentation(pi, ind.representation, minSpanningTree);
+		ind.createDirectionMatrixFromMST(minSpanningTree);
 		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
 		
 		return ind;
 	}
 
+	/**
+	 * Get the indices of a given pixel's cardinal neighbors.
+	 * @param i - A pixel index
+	 * @return a list of neighbors indices
+	 */
 	public List<Integer> getNeighbors(int i) {
-		List<Integer> neighbors = new ArrayList<>();
-
+		Stream<Direction> dirs = Arrays.stream(Direction.values());
+		Stream<Integer> neighbors = dirs.map((d) -> getPixelIndex(i, d)).filter((a) -> a != -1);
+		return neighbors.collect(Collectors.toList());
+		
+		/*List<Integer> neighbors = new ArrayList<>(); 
 		for(Direction d : Direction.values()) {
 			int pixel = getPixelIndex(i, d);
 			if(pixel != -1)
 				neighbors.add(pixel);
 		}
-		
-		return neighbors;
+		return neighbors;*/
 	}
 
 
+	/**
+	 * Check if two pixels belong to the same segment
+	 * @param i - A pixel index
+	 * @param j - Another pixel index
+	 * @return true if the two given pixels belong to the same segment, else false
+	 */
 	public boolean sameSegment(int i, int j) {
 		return pixelSegments[i] == pixelSegments[j];
 	}
 
+	/**
+	 * Compute the distance between two given Spixels.
+	 * @param i - A pixel index
+	 * @param j - Another pixel index
+	 * @return the euclidean distance between pixels i and j in RGB space if i and j don't belong to the same segment, else 0
+	 */
 	public float dist(int i, int j) {
 		return sameSegment(i, j) ? 0 : euclideanDistance(pi.getRGB(i), pi.getRGB(j));
 	}
 
+	/**
+	 * Compute the edge value for the current segmentation of this individual
+	 * @return the edge value
+	 */
 	public float edgeValue() {
 		float edgeValue = 0;
 		for(int i = 0 ; i < this.representation.length; i++) {
@@ -93,8 +128,12 @@ public class Individual implements IIndividual {
 		return edgeValue;
 	}
 
+	/**
+	 * Compute the connectivity value for the current segmentation of this individual
+	 * @return the connectivity
+	 */
 	public float connectivity() {
-		float connectivity = 0.0f;
+		float connectivity = 0;
 		for(int i = 0; i < this.representation.length; i++) {
 			for(int n : getNeighbors(i)) {
 				if(!sameSegment(i,n))
@@ -104,23 +143,20 @@ public class Individual implements IIndividual {
 		return connectivity;
 	}
 
+	/**
+	 * Compute overall deviation for the current segmentation of this individual
+	 * @return the overalll deviation
+	 */
 	public float overallDeviation() {
 		float overallDeviation = 0;
 		
 		// For each segment
-		for(int s = 0; s < segments.size(); s++) {
+		for(Segment s : segments) {
 			// First compute the centroid
-			float[] centroid = new float[3];
-			float numPixels = segments.get(s).getPixels().size();
-			for(int i : segments.get(s).getPixels()) {
-				int[] rgb = pi.getRGB(i);
-				centroid[0] += rgb[0] / numPixels;
-				centroid[1] += rgb[1] / numPixels;
-				centroid[2] += rgb[2] / numPixels;
-			}
+			float[] centroid = s.calculateCentroid(pi);
 			
-			// Then update the deviation
-			for(int i : segments.get(s).getPixels()) {
+			// Then add up the deviation for the current segment
+			for(int i : s.getPixels()) {
 				int[] rgb = pi.getRGB(i);
 				
 				overallDeviation += Math.sqrt(
@@ -135,7 +171,12 @@ public class Individual implements IIndividual {
 	
 	private int currentSegmentIndex;
 
-	private void assignSegment(int i, List<Integer> visited) {
+	/**
+	 * Recursively assign pixels to their segment starting at pixel index i
+	 * @param i - The starting pixel
+	 * @param visited - An array of visited pixels
+	 */
+	private void assignToSegment(int i, List<Integer> visited) {
 		int j = getPixelIndex(i, representation[i]);
 		if(j == -1 || visited.contains(i)) {
 			visited.add(i);
@@ -144,11 +185,14 @@ public class Individual implements IIndividual {
 		else {
 			visited.add(i);
 			if(pixelSegments[j] == -1)
-				assignSegment(j, visited);
+				assignToSegment(j, visited);
 			pixelSegments[i] = pixelSegments[j];
 		}
 	}
 	
+	/**
+	 * Compute the segment reprentation from the directions matrix.
+	 */
 	private void updateSegmentRepresentation() {
 		currentSegmentIndex = 0;
 		
@@ -158,7 +202,7 @@ public class Individual implements IIndividual {
 			pixelSegments[i] = -1;
 		for(int i = 0; i < pixelSegments.length; i++) {
 			if(pixelSegments[i] == -1)
-				assignSegment(i, new ArrayList<Integer>());
+				assignToSegment(i, new ArrayList<Integer>());
 		}
 
 		// Create representation as list of segments
@@ -173,7 +217,7 @@ public class Individual implements IIndividual {
 	}
 	
 	/**
-	 * Get the pixel in a given direction from a source pixel/
+	 * Get the pixel in a given direction from a source pixel.
 	 * @param source - A pixel index
 	 * @param dir - A direction
 	 * @return the pixel in the given direction from the source.
@@ -206,14 +250,9 @@ public class Individual implements IIndividual {
 		}	
 	}
 	
-	public List<Segment> getSegments() {
-		return segments;
-	}
-
-	public int[] getPixelSegments() {
-		return pixelSegments;
-	}
-	
+	/**
+	 * Print this individual to the console.
+	 */
 	public void print() {
 		String str = "";
 		for(int i = 0; i < representation.length; i++) {
@@ -226,29 +265,54 @@ public class Individual implements IIndividual {
 		System.out.println(str);
 	}
 	
-	public static void mstToSegmentation(ProblemInstance pbi, Direction[] seg, PrimMST tree) {
-		seg[tree.getRootVertex()] = Direction.NONE;
-		segmentChildren(pbi, seg, tree, tree.getRootVertex());
+	/**
+	 * Create a segmentation as a direction matrix from a minimum spanning tree.
+	 * @param tree - A minimum spanning tree
+	 */
+	private void createDirectionMatrixFromMST(PrimMST tree) {
+		representation[tree.getRootVertex()] = Direction.NONE;
+		
+		// Begin recursive segmentation at from the tree's root vertex
+		segmentChildren(tree, tree.getRootVertex());
 		
 		// Break single segment into multiple segment
 		int numSegments = 4 + (int) (Math.random() * 6);
 		for(int i = 0; i < numSegments; i++) {
 			int rdPos;
 			do {
-				rdPos = (int) (Math.random() * seg.length);
+				rdPos = (int) (Math.random() * representation.length);
 			}
-			while(seg[rdPos] == Direction.NONE);
-			seg[rdPos] = Direction.NONE;
+			while(representation[rdPos] == Direction.NONE);
+			representation[rdPos] = Direction.NONE;
 		}
 	}
 	
-	private static void segmentChildren(ProblemInstance pbi, Direction[] seg, PrimMST tree, int vertex) {
-		List<Integer> children = tree.getChildren(vertex);
-
-		for(int i = 0; i < children.size(); i++) {
-			int child = children.get(i);
-			seg[child] = pbi.getDirection(child, vertex);
-			segmentChildren(pbi, seg, tree, child);
+	/**
+	 * Recursively set the direction of all children of a given vertex in a given minimum spanning tree of the image
+	 * @param tree - A minimum spanning tree
+	 * @param vertex - A vertex in the tree
+	 */
+	private void segmentChildren(PrimMST tree, int vertex) {
+		for(int child : tree.getChildren(vertex)) {
+			representation[child] = pi.getDirection(child, vertex);
+			segmentChildren(tree, child);
 		}	
 	}
+	
+	/**
+	 * Get the segmentation as a list of segments.
+	 * @return a list of segments
+	 */
+	public List<Segment> getSegments() {
+		return segments;
+	}
+
+	/**
+	 * Get the segmentation as a pixel matrix.
+	 * @return a pixel matrix indicading which segment each pixel belongs to
+	 */
+	public int[] getPixelSegments() {
+		return pixelSegments;
+	}
+	
 }

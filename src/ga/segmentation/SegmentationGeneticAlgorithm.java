@@ -5,7 +5,6 @@ import java.util.List;
 
 import ga.GeneticAlgorithm;
 import ga.IIndividual;
-import ga.Population;
 
 public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 	public SegmentationGeneticAlgorithm() {

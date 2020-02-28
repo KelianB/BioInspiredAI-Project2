@@ -12,7 +12,7 @@ public interface IGeneticAlgorithm {
 	 * Get the current population
 	 * @return the current population
 	 */
-	public Population getPopulation();
+	public IPopulation getPopulation();
 	
 	/**
 	 * Run one generation of the GA

@@ -37,7 +37,4 @@ public class WeightedGraph {
 	public int getNumVertices() {
 		return this.connections.length;
 	}
-	
-	
-
 }
