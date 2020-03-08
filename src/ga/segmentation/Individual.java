@@ -50,6 +50,18 @@ public class Individual implements IIndividual {
 		});
 	}
 	
+	public float getEdgeValue() {
+		return edgeValue.getValue();
+	}
+	
+	public float getConnectivity() {
+		return connectivity.getValue();
+	}
+	
+	public float getOverallDeviation() {
+		return overallDeviation.getValue();
+	}
+	
 	@Override
 	public float getFitness() {
 		updateSegmentRepresentation();
@@ -236,7 +248,7 @@ public class Individual implements IIndividual {
 				assignToSegment(i, new ArrayList<Integer>());
 		}
 
-		System.out.println("decoding took " + (System.nanoTime() - time) / 1000000 + "ms");
+		// System.out.println("decoding took " + (System.nanoTime() - time) / 1000000 + "ms");
 		time = System.nanoTime();
 		
 		// Create representation as list of segments
@@ -249,7 +261,7 @@ public class Individual implements IIndividual {
 		for(int i = 0; i < pixelSegments.length; i++)
 			segments.get(pixelSegments[i]).addPixel(i);	
 		
-		System.out.println("transforming into list of segments took " + (System.nanoTime() - time) / 1000000 + "ms");
+		// System.out.println("transforming into list of segments took " + (System.nanoTime() - time) / 1000000 + "ms");
 	}
 	
 	/**
