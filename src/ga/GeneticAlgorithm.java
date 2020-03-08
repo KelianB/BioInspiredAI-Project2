@@ -8,10 +8,12 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	private int generationsRan;
 	private IPopulation population;
 	private IProblemInstance problemInstance;
+	private float mutationRate;
 	
 	public GeneticAlgorithm(IProblemInstance problemInstance) {
 		this.problemInstance = problemInstance;
 		this.generationsRan = 0;
+		this.mutationRate = 0.0f;
 	}
 
 	@Override
@@ -36,13 +38,20 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 		List<IIndividual> offspring = createOffspring();
 		
 		// Mutate
-		for(int i = 0; i < offspring.size(); i++)
-			offspring.get(i).mutate();
+		for(int i = 0; i < offspring.size(); i++) {
+			if(Math.random() < getMutationRate())
+				offspring.get(i).mutate();
+		}
 		
 		// Insert offspring
 		this.insertOffspring(offspring);
 		
 		generationsRan++;
+	}
+	
+	@Override
+	public void setMutationRate(float r) {
+		this.mutationRate = r;
 	}
 
 	@Override
@@ -58,5 +67,10 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	@Override
 	public IProblemInstance getProblemInstance() {
 		return problemInstance;
+	}
+	
+	@Override
+	public float getMutationRate() {
+		return mutationRate;
 	}
 }

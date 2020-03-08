@@ -50,4 +50,15 @@ public interface IGeneticAlgorithm {
 	 */
 	public IProblemInstance getProblemInstance();
 	
+	/**
+	 * Set the GA's mutation rate.
+	 * @param r - The new mutation rate
+	 */
+	public void setMutationRate(float r);
+	
+	/**
+	 * Get the GA's mutation rate
+	 * @return the mutation rate
+	 */
+	public float getMutationRate();
 }

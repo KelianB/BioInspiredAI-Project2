@@ -40,6 +40,7 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 	protected IPopulation createInitialPopulation() {
 		Population pop = new Population();
 		for(int i = 0; i < Main.config.getInt("populationSize"); i++) {
+			System.out.println("Creating individual #" + i);
 			Individual ind = Individual.createRandomIndividual((ProblemInstance) getProblemInstance());
 			pop.addIndividual(ind);
 		}
