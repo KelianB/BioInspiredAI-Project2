@@ -18,6 +18,9 @@ public class ProblemInstance implements IProblemInstance {
 	// Store the RGB of each pixel as a matrix of [r, g, b] integer arrays
 	private int[][][] rgb;
 	
+	// Store the HSB (hue, saturation, brightness) of each pixel as a matrix of [h, s, b] integer arrays
+	private float[][][] hsb;
+	
 	private WeightedGraph euclideanDistanceGraph;
 	
 	/**
@@ -30,17 +33,19 @@ public class ProblemInstance implements IProblemInstance {
 		
 		int w = image.getWidth(), h = image.getHeight();
 		
-		// Store the RGB of each pixel in a three dimensional array of shape (width, height, 3
+		// Store the RGB and HSB of each pixel in three dimensional arrays of shape (width, height, 3)
 		rgb = new int[w][h][3];
+		hsb = new float[w][h][3];
 		for(int x = 0; x < w; x++) {
 			for(int y = 0; y < h; y++) {
 				Color c = new Color(getImage().getRGB(x, y));
 				rgb[x][y][0] = c.getRed();
 				rgb[x][y][1] = c.getGreen();
 				rgb[x][y][2] = c.getBlue();
+				hsb[x][y] = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
 			}	
 		}
-		
+				
 		// Create a graph where the weight of each edge is connected to its 4 cardinal neighbours.
 		// The weight of the edges are given by the Euclidean distance in RGB color space
 		euclideanDistanceGraph = new WeightedGraph(image.getWidth()*image.getHeight());
@@ -57,7 +62,8 @@ public class ProblemInstance implements IProblemInstance {
 					euclideanDistanceGraph.addConnection(
 						y*w+x, // position of current pixel in flattened coordinates
 						y2*w+x2, // position of neighbour in flattened coordinates
-						euclideanDistance(getRGB(x, y), getRGB(x2, y2))
+						//euclideanDistance(getRGB(x, y), getRGB(x2, y2))
+						euclideanDistance(getHSB(x, y), getHSB(x2, y2))
 					);
 				}
 			}	
@@ -83,13 +89,33 @@ public class ProblemInstance implements IProblemInstance {
 	}
 	
 	/**
+	 * Get the HSB value at a given position of the image.
+	 * @param x - A horizontal position
+	 * @param y - A vertical position
+	 * @return the hsb at position (x, y), as a [h, s, b] float array
+	 */
+	public float[] getHSB(int x, int y) {
+		return hsb[x][y];
+	}
+	
+	/**
 	 * Get the RGB of a given pixel index in the image.
 	 * @param i - A pixel index (between 0 and width*height)
 	 * @return the rgb at pixel index i, as a [r, g, b] float array
 	 */
 	public int[] getRGB(int i) {
 		int[] pos = pixelIndexToPos(i);
-		return rgb[pos[0]][pos[1]];
+		return getRGB(pos[0], pos[1]);
+	}
+	
+	/**
+	 * Get the HSB value of a given pixel index in the image.
+	 * @param i - A pixel index (between 0 and width*height)
+	 * @return the hsb at pixel index i, as a [h, s, b] float array
+	 */
+	public float[] getHSB(int i) {
+		int[] pos = pixelIndexToPos(i);
+		return getHSB(pos[0], pos[1]);
 	}
 	
 	/**
@@ -141,16 +167,28 @@ public class ProblemInstance implements IProblemInstance {
 	}
 	
 	/**
-	 * Calculates the euclidean distance between two RGB arrays.
-	 * @param rgb1 - A [red, green blue] array
-	 * @param rgb2 - Another [red, green blue] array
-	 * @return the euclidean distance between the two RGBs.
+	 * Calculates the euclidean distance between two one-dimensional float arrays of same length.
+	 * @param arr1 - An array of floats
+	 * @param arr2 - Another array of floats
+	 * @return the euclidean distance between the two arrays.
 	 */
-	public static float euclideanDistance(int[] rgb1, int[] rgb2) {
+	public static float euclideanDistance(float[] arr1, float[] arr2) {
 		float sumOfSquares = 0.0f;
-		for(int i = 0; i < rgb1.length; i++) {
-			sumOfSquares += Math.pow(rgb1[i] - rgb2[i], 2);
-		}
+		for(int i = 0; i < arr1.length; i++)
+			sumOfSquares += Math.pow(arr1[i] - arr2[i], 2);
+		return (float) Math.sqrt(sumOfSquares);
+	}
+	
+	/**
+	 * Calculates the euclidean distance between two one-dimensional integer arrays of same length.
+	 * @param arr1 - An array of integers
+	 * @param arr2 - Another array of integers
+	 * @return the euclidean distance between the two arrays.
+	 */
+	public static float euclideanDistance(int[] arr1, int[] arr2) {
+		float sumOfSquares = 0.0f;
+		for(int i = 0; i < arr1.length; i++)
+			sumOfSquares += Math.pow(arr1[i] - arr2[i], 2);
 		return (float) Math.sqrt(sumOfSquares);
 	}
 	

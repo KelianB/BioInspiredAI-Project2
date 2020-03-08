@@ -54,7 +54,7 @@ public class Config {
 	 * @param key - A property key
 	 * @return the property associated with the given key
 	 */
-	public float getInt(String key) {
+	public int getInt(String key) {
 		return Integer.parseInt(get(key));
 	}
 	

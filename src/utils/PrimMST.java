@@ -3,6 +3,7 @@ package utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Creates a Minimum Spanning Tree (MST) from a given graph using Prim's algorithm
@@ -125,9 +126,12 @@ public class PrimMST {
 
 	@Override
 	public String toString() {
-		String str = "Edge\n"; 
+		/*String str = "Edges\n"; 
 		for(int i = 1; i < getGraph().getNumVertices(); i++) 
-			str += parent[i] + " - " + i;
+			str += parent[i] + "-" + i + ", ";*/
+		String str = "";
+		for(int i = 0; i < children.length; i++)
+			str += i + ": " + String.join(",", children[i].stream().map(val -> val+"").collect(Collectors.toList())) + "\n";
 		return str;
 	}
 		  
@@ -135,6 +139,10 @@ public class PrimMST {
 	
 	public List<Integer> getChildren(int vertex) {
 		return children[vertex];
+	}
+	
+	public int getParent(int vertex) {
+		return parent[vertex];
 	}
 	
 	public int getRootVertex() {
@@ -146,6 +154,9 @@ public class PrimMST {
 	}
 	
 	private static <T> int binarySearch(List<T> sortedList, Comparable<T> item, int low, int high) { 
+		if(sortedList.size() == 0)
+			return 0;
+		
 	    if (high <= low) 
 	        return (item.compareTo(sortedList.get(low)) == 1)?  (low + 1): low; 
 	  

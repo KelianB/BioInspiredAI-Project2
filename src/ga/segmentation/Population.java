@@ -2,9 +2,14 @@ package ga.segmentation;
 
 import java.util.LinkedList;
 
+import ga.GeneticAlgorithm;
 import ga.SimplePopulation;
 
 public class Population extends SimplePopulation {
+	public Population(GeneticAlgorithm ga) {
+		super(ga);
+	}
+
 	public LinkedList<Population> fastNonDominatedSorting(Population population) {
 		/*LinkedList<Population> fronts = new LinkedList<Population>();
 		LinkedList<Individual> F1 = new LinkedList<Individual>();

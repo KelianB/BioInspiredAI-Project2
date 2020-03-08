@@ -41,15 +41,16 @@ public class Segment {
     	float[] centroid = new float[3];
     	
     	List<Integer> pixels = getPixels();
+    	float numPixels = (float) pixels.size();
 		for(int i : pixels) {
 			int[] rgb = pi.getRGB(i);
-			centroid[0] += rgb[0];
-			centroid[1] += rgb[1];
-			centroid[2] += rgb[2];
+			centroid[0] += rgb[0] / numPixels;
+			centroid[1] += rgb[1] / numPixels;
+			centroid[2] += rgb[2] / numPixels;
 		}
 		
-		for(int i = 0; i < centroid.length; i++)
-			centroid[i] /= pixels.size();
+		//for(int i = 0; i < centroid.length; i++)
+			//centroid[i] /= pixels.size();
 		
 		return centroid;
     }

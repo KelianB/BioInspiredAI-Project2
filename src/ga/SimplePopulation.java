@@ -2,12 +2,15 @@ package ga;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.PriorityQueue;
 
 public class SimplePopulation implements IPopulation {
 	private List<IIndividual> individuals;
+	private GeneticAlgorithm ga;
 	
-	public SimplePopulation() {
+	public SimplePopulation(GeneticAlgorithm ga) {
 		individuals = new ArrayList<IIndividual>();
+		this.ga = ga;
 	}
 	
 	@Override
@@ -42,5 +45,58 @@ public class SimplePopulation implements IPopulation {
 		}
 		
 		return getIndividuals().get(maxIndex);
+	}
+	
+	/**
+	 * Puts the given number of best individuals at the beginning of the list, in no particular order
+	 * @param numberOfElites - The number of elites
+	 */
+	public void putElitesFirst(int numberOfElites) {
+		if(numberOfElites == 0)
+			return;
+		
+		PriorityQueue<IIndividual> heap = new PriorityQueue<>(getIndividuals().size(), IIndividual.descendingFitnessComparator);
+		heap.addAll(getIndividuals());
+		for(int i = 0; i < numberOfElites; i++) {
+			IIndividual next = heap.poll();
+			int idx = getIndividuals().indexOf(next);
+			getIndividuals().remove(idx);
+			getIndividuals().add(0, next);
+		}
+	}
+	
+	/**
+	 * Selects an individual from the population using tournament selection
+	 * @param tournamentSize - The tournament size
+	 * @param p - The probability of selecting the best individual in the tournament
+	 */
+	public IIndividual tournamentSelection(int tournamentSize, float p) {
+		List<IIndividual> pool = new ArrayList<IIndividual>();
+		
+		// Create the tournament pool
+		for(int i = 0; i < tournamentSize; i++)
+			pool.add(getIndividuals().get((int) (ga.random() * getIndividuals().size())));
+		
+		// Sort by decreasing fitness
+		pool.sort(IIndividual.descendingFitnessComparator);
+		
+		// Extract an individual
+		if(p == 1)
+			return pool.get(0);
+		for(int i = 0; i < pool.size(); i++) {
+			if(ga.random() < p * Math.pow(1-p, i)) 
+				return pool.get(i);
+		}
+		
+		// Fall back to random
+		return pool.get((int) (ga.random() * pool.size()));
+	}
+
+	/**
+	 * Selects an individual from the population using deterministic tournament selection (will always select the best individual in the tournament)
+	 * @param tournamentSize - The tournament size
+	 */
+	public IIndividual tournamentSelection(int tournamentSize) {
+		return tournamentSelection(tournamentSize, 1);
 	}
 }

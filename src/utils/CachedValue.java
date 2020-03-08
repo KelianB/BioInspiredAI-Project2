@@ -20,12 +20,19 @@ public class CachedValue<T> {
 	public T getValue() {
 		if(needsUpdating) {
 			value = updateFunction.get();
-			needsUpdating = true;
+			needsUpdating = false;
 		}
 		return value;
 	}
 	
 	public void needsUpdating() {
 		this.needsUpdating = true;
+	}
+	
+	public CachedValue<T> copy() {
+		CachedValue<T> copy = new CachedValue<>(updateFunction);
+		copy.needsUpdating = needsUpdating;
+		copy.value = value;
+		return copy;
 	}
 }
