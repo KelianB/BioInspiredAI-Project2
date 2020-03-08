@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import ga.IIndividual;
 import problem.segmentation.ProblemInstance;
+import utils.CachedValue;
 import utils.PrimMST;
 
 public class Individual implements IIndividual {
@@ -23,24 +24,53 @@ public class Individual implements IIndividual {
 	// Store the segmentation as a segment matrix
 	private int[] pixelSegments;
 	
+	// Store the last computed value for each objective
+	private CachedValue<Float> edgeValue, connectivity, overallDeviation;
+
+	private CachedValue<Float> fitness;
+	
 	private ProblemInstance pi;
 	
 	public Individual(ProblemInstance pi) {
 		this.pi = pi;
 		this.representation = new Direction[pi.getImage().getWidth() * pi.getImage().getHeight()];
+		
+		edgeValue = new CachedValue<Float>(() -> {
+			return computeEdgeValue();
+		});
+		connectivity = new CachedValue<Float>(() -> {
+			return computeConnectivity();
+		});
+		overallDeviation = new CachedValue<Float>(() -> {
+			return computeOverallDeviation();
+		});
+
+		fitness = new CachedValue<Float>(() -> {
+			return edgeValue.getValue() + connectivity.getValue() + overallDeviation.getValue();
+		});
 	}
 	
 	@Override
 	public float getFitness() {
 		updateSegmentRepresentation();
-		System.out.println("Edge value: " + edgeValue());
-		System.out.println("Connectivity: " + connectivity());
-		System.out.println("Overall deviation: " + overallDeviation());
-		return 0;
+		return fitness.getValue();
 	}
 
 	@Override
 	public void mutate() {
+		int randPos = (int) (Math.random() * this.representation.length);
+		Direction randDir;
+		
+		do {
+			randDir = Direction.values()[(int) (Math.random() * Direction.values().length)];
+		} while(this.representation[randPos] == randDir);
+		
+		this.representation[randPos] = randDir; 
+		
+		edgeValue.needsUpdating();
+		connectivity.needsUpdating();
+		overallDeviation.needsUpdating();
+		
 		
 	}
 
@@ -119,7 +149,7 @@ public class Individual implements IIndividual {
 	 * Compute the edge value for the current segmentation of this individual
 	 * @return the edge value
 	 */
-	public float edgeValue() {
+	public float computeEdgeValue() {
 		float edgeValue = 0;
 		for(int i = 0 ; i < this.representation.length; i++) {
 			for(int n : getNeighbors(i))
@@ -132,7 +162,7 @@ public class Individual implements IIndividual {
 	 * Compute the connectivity value for the current segmentation of this individual
 	 * @return the connectivity
 	 */
-	public float connectivity() {
+	public float computeConnectivity() {
 		float connectivity = 0;
 		for(int i = 0; i < this.representation.length; i++) {
 			for(int n : getNeighbors(i)) {
@@ -147,7 +177,7 @@ public class Individual implements IIndividual {
 	 * Compute overall deviation for the current segmentation of this individual
 	 * @return the overalll deviation
 	 */
-	public float overallDeviation() {
+	public float computeOverallDeviation() {
 		float overallDeviation = 0;
 		
 		// For each segment

@@ -35,7 +35,16 @@ public class Main {
 		System.out.println("Number of segments: " + ind.getSegments().size());
 		
 		SegmentationGeneticAlgorithm sga = new SegmentationGeneticAlgorithm(instance);
+		sga.setMutationRate(config.getFloat("mutationRate"));
 		sga.initializePopulation();
+		
+		for(int i = 0; i < 100; i++) {
+			System.out.println("Running generation #" + i);
+			sga.runGeneration();
+			System.out.println("Fittest: ");
+			Individual fittest = (Individual) sga.getPopulation().getFittestIndividual(); 
+			System.out.println("fitness = " + fittest.getFitness());
+		}
 		
 	}
 }
