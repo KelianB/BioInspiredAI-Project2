@@ -2,7 +2,6 @@ package ga.segmentation;
 
 import java.util.LinkedList;
 
-import ga.IIndividual;
 import ga.SimplePopulation;
 
 public class Population extends SimplePopulation {

@@ -194,6 +194,7 @@ public class Individual implements IIndividual {
 	 * Compute the segment reprentation from the directions matrix.
 	 */
 	private void updateSegmentRepresentation() {
+		long time = System.nanoTime();
 		currentSegmentIndex = 0;
 		
 		// First assign each pixel to its segment
@@ -205,6 +206,9 @@ public class Individual implements IIndividual {
 				assignToSegment(i, new ArrayList<Integer>());
 		}
 
+		System.out.println("decoding took " + (System.nanoTime() - time) / 1000000 + "ms");
+		time = System.nanoTime();
+		
 		// Create representation as list of segments
 
 		// Start by creating the right amount of empty segments
@@ -214,6 +218,8 @@ public class Individual implements IIndividual {
 		// Then add the pixels to the right segments
 		for(int i = 0; i < pixelSegments.length; i++)
 			segments.get(pixelSegments[i]).addPixel(i);	
+		
+		System.out.println("transforming into list of segments took " + (System.nanoTime() - time) / 1000000 + "ms");
 	}
 	
 	/**

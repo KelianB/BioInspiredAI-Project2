@@ -1,6 +1,7 @@
 package main;
 
 import ga.segmentation.Individual;
+import ga.segmentation.SegmentationGeneticAlgorithm;
 import problem.ProblemReadingException;
 import problem.segmentation.ProblemInstance;
 import problem.segmentation.ProblemReader;
@@ -30,7 +31,11 @@ public class Main {
 		System.out.println("Creating a random individual:");
 		Individual ind = Individual.createRandomIndividual(instance);
 		ind.getFitness();
-		ind.print();
+		//ind.print();
 		System.out.println("Number of segments: " + ind.getSegments().size());
+		
+		SegmentationGeneticAlgorithm sga = new SegmentationGeneticAlgorithm(instance);
+		sga.initializePopulation();
+		
 	}
 }

@@ -5,10 +5,13 @@ import java.util.List;
 
 import ga.GeneticAlgorithm;
 import ga.IIndividual;
+import ga.IPopulation;
+import main.Main;
+import problem.segmentation.ProblemInstance;
 
 public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
-	public SegmentationGeneticAlgorithm() {
-		super();
+	public SegmentationGeneticAlgorithm(ProblemInstance problemInstance) {
+		super(problemInstance);
 	}
 
 	@Override
@@ -34,8 +37,13 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 	}
 
 	@Override
-	public Population createInitialPopulation() {
-		return null;
+	protected IPopulation createInitialPopulation() {
+		Population pop = new Population();
+		for(int i = 0; i < Main.config.getInt("populationSize"); i++) {
+			Individual ind = Individual.createRandomIndividual((ProblemInstance) getProblemInstance());
+			pop.addIndividual(ind);
+		}
+		return pop;
 	}
 
 

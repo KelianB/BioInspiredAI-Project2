@@ -14,12 +14,16 @@ public class SimplePopulation implements IPopulation {
 	public List<IIndividual> getIndividuals() {
 		return individuals;
 	}
+	
+	@Override
+	public void addIndividual(IIndividual ind) {
+		this.individuals.add(ind);
+	}
 
 	@Override
 	public int getSize() {
 		return individuals.size();
 	}
-	
 	
 	@Override
 	public IIndividual getFittestIndividual() {

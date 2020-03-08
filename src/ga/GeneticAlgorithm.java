@@ -2,12 +2,16 @@ package ga;
 
 import java.util.List;
 
+import problem.IProblemInstance;
+
 public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	private int generationsRan;
 	private IPopulation population;
+	private IProblemInstance problemInstance;
 	
-	public GeneticAlgorithm() {
-		generationsRan = 0;
+	public GeneticAlgorithm(IProblemInstance problemInstance) {
+		this.problemInstance = problemInstance;
+		this.generationsRan = 0;
 	}
 
 	@Override
@@ -19,7 +23,7 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 		population = createInitialPopulation();
 	}
 	
-	public abstract IPopulation createInitialPopulation();
+	protected abstract IPopulation createInitialPopulation();
 	
 	@Override
 	public void runGeneration() {		
@@ -49,5 +53,10 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	@Override
 	public IPopulation getPopulation() {
 		return population;
+	}
+	
+	@Override
+	public IProblemInstance getProblemInstance() {
+		return problemInstance;
 	}
 }

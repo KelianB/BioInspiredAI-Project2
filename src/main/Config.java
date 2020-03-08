@@ -49,6 +49,15 @@ public class Config {
 		return Float.parseFloat(get(key));
 	}
 	
+	/**
+	 * Get an int property with a given key
+	 * @param key - A property key
+	 * @return the property associated with the given key
+	 */
+	public float getInt(String key) {
+		return Integer.parseInt(get(key));
+	}
+	
 	
 	
 	/**

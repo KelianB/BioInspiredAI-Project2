@@ -2,6 +2,8 @@ package ga;
 
 import java.util.List;
 
+import problem.IProblemInstance;
+
 public interface IGeneticAlgorithm {
 	/**
 	 * Creates the initial population for this GA instance
@@ -42,5 +44,10 @@ public interface IGeneticAlgorithm {
 	 */
 	public void insertOffspring(List<IIndividual> offspring);
 	
+	/**
+	 * Get the problem instance this GA operates on
+	 * @return the problem instance
+	 */
+	public IProblemInstance getProblemInstance();
 	
 }

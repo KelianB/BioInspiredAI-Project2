@@ -10,6 +10,12 @@ public interface IPopulation {
 	public List<IIndividual> getIndividuals();
 	
 	/**
+	 * Add an individual to the population
+	 * @param ind - An individual
+	 */
+	public void addIndividual(IIndividual ind);
+	
+	/**
 	 * Get the size of the population
 	 * @return the number of individuals in the population
 	 */
