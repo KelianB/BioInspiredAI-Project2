@@ -5,6 +5,10 @@ import java.util.List;
 
 import problem.segmentation.ProblemInstance;
 
+/**
+ * Represents a segment in the context of image segmentation.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public class Segment {
 	// Store the pixels that belong to this segment.
     private List<Integer> pixels;
@@ -43,14 +47,11 @@ public class Segment {
     	List<Integer> pixels = getPixels();
     	float numPixels = (float) pixels.size();
 		for(int i : pixels) {
-			int[] rgb = pi.getRGB(i);
-			centroid[0] += rgb[0] / numPixels;
-			centroid[1] += rgb[1] / numPixels;
-			centroid[2] += rgb[2] / numPixels;
+			float[] hsb = pi.getHSB(i);
+			centroid[0] += hsb[0] / numPixels;
+			centroid[1] += hsb[1] / numPixels;
+			centroid[2] += hsb[2] / numPixels;
 		}
-		
-		//for(int i = 0; i < centroid.length; i++)
-			//centroid[i] /= pixels.size();
 		
 		return centroid;
     }

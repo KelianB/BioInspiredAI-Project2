@@ -1,19 +1,31 @@
 package problem.segmentation;
 
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
 import ga.segmentation.Individual.Direction;
 import problem.IProblemInstance;
+import utils.ImageUtils;
 import utils.WeightedGraph;
 
+/**
+ * Represents an image segmentation problem instance.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public class ProblemInstance implements IProblemInstance {
 	// The problem instance's image
 	private BufferedImage image;
+	
+	// Name of the problem instance
+	private String name;
+	
+	// Original size of the image, prior to scaling
+	private int originalWidth, originalHeight;
+	
+	// Scaling factor
+	private float imageScaling;
 	
 	// Store the RGB of each pixel as a matrix of [r, g, b] integer arrays
 	private int[][][] rgb;
@@ -21,19 +33,25 @@ public class ProblemInstance implements IProblemInstance {
 	// Store the HSB (hue, saturation, brightness) of each pixel as a matrix of [h, s, b] integer arrays
 	private float[][][] hsb;
 	
+	// A graph in which each pixel is connected to its cardinal neighbors with weights equal to the euclidean distances in HSB space
 	private WeightedGraph euclideanDistanceGraph;
 	
 	/**
-	 * Create a new problem instances
+	 * Create a new problem instance
+	 * @param name - The name of this problem instance
 	 * @param originalImage - An image
 	 * @param imageScaling - A ratio by which to scale the input image
 	 */
-	public ProblemInstance(BufferedImage originalImage, float imageScaling) {
-		this.image = imageScaling == 1 ? originalImage : scaleImage(originalImage, imageScaling);
+	public ProblemInstance(String name, BufferedImage originalImage, float imageScaling) {
+		this.name = name;
+		this.originalWidth = originalImage.getWidth();
+		this.originalHeight = originalImage.getHeight();
+		this.image = imageScaling == 1 ? originalImage : ImageUtils.scaleImage(originalImage, imageScaling);
+		this.imageScaling = imageScaling;
 		
 		int w = image.getWidth(), h = image.getHeight();
 		
-		// Store the RGB and HSB of each pixel in three dimensional arrays of shape (width, height, 3)
+		// Store the RGB and HSB of each pixel in three-dimensional arrays of shape (width, height, 3)
 		rgb = new int[w][h][3];
 		hsb = new float[w][h][3];
 		for(int x = 0; x < w; x++) {
@@ -46,8 +64,8 @@ public class ProblemInstance implements IProblemInstance {
 			}	
 		}
 				
-		// Create a graph where the weight of each edge is connected to its 4 cardinal neighbours.
-		// The weight of the edges are given by the Euclidean distance in RGB color space
+		// Create a graph in which each pixel is connected to its 4 cardinal neighbours.
+		// The weight of the edges are given by the euclidean distance in HSB color space
 		euclideanDistanceGraph = new WeightedGraph(image.getWidth()*image.getHeight());
 		for(int x = 0; x < w; x++) {
 			for(int y = 0; y < h; y++) {
@@ -84,7 +102,7 @@ public class ProblemInstance implements IProblemInstance {
 	 * @param y - A vertical position
 	 * @return the rgb at position (x, y), as a [r, g, b] float array
 	 */
-	public int[] getRGB(int x, int y) {
+	private int[] getRGB(int x, int y) {
 		return rgb[x][y];
 	}
 	
@@ -94,7 +112,7 @@ public class ProblemInstance implements IProblemInstance {
 	 * @param y - A vertical position
 	 * @return the hsb at position (x, y), as a [h, s, b] float array
 	 */
-	public float[] getHSB(int x, int y) {
+	private float[] getHSB(int x, int y) {
 		return hsb[x][y];
 	}
 	
@@ -116,6 +134,30 @@ public class ProblemInstance implements IProblemInstance {
 	public float[] getHSB(int i) {
 		int[] pos = pixelIndexToPos(i);
 		return getHSB(pos[0], pos[1]);
+	}
+	
+	/**
+	 * Get the scaling factor used for the image
+	 * @return the scaling factor
+	 */
+	public float getImageScaling() {
+		return imageScaling;
+	}
+	
+	/**
+	 * Get the original width of the image (prior to scaling)
+	 * @return the original width
+	 */
+	public int getOriginalWidth() {
+		return originalWidth;
+	}
+	
+	/**
+	 * Get the original height of the image (prior to scaling)
+	 * @return the original height
+	 */
+	public int getOriginalHeight() {
+		return originalHeight;
 	}
 	
 	/**
@@ -193,21 +235,25 @@ public class ProblemInstance implements IProblemInstance {
 	}
 	
 	/**
-	 * Scales a given image at a given ratio.
-	 * @param img - A buffered image
-	 * @param scale - A scaling ratio
-	 * @return the scaling image
+	 * Get the euclidean distance graph for this problem instance.
+	 * @return a graph in which each pixel is connected to its cardinal neighbors with weights equal to the euclidean distances in HSB space
 	 */
-	private static BufferedImage scaleImage(BufferedImage img, float scale) {
-		BufferedImage resized = new BufferedImage((int) (img.getWidth() * scale), (int) (img.getHeight() * scale), img.getType());
-		Graphics2D g = resized.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-		g.drawImage(img, 0, 0, resized.getWidth(), resized.getHeight(), 0, 0, img.getWidth(), img.getHeight(), null);
-		g.dispose();
-		return resized;
-	}
-	
 	public WeightedGraph getEuclideanDistanceGraph() {
 		return euclideanDistanceGraph;
+	}
+
+	/**
+	 * Get the euclidean distance between two pixels, in HSB color space.
+	 * @param i - A pixel index
+	 * @param j - Another pixel index
+	 * @return the euclidean distance
+	 */
+	public float getEuclideanDistance(int i, int j) {
+		return euclideanDistance(getHSB(i), getHSB(j));
+	}
+
+	@Override
+	public String getName() {
+		return name;
 	}
 }

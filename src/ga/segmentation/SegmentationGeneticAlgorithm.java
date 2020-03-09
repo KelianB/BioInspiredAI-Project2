@@ -10,6 +10,11 @@ import ga.SimplePopulation;
 import main.Main;
 import problem.segmentation.ProblemInstance;
 
+/**
+ * A Genetic Algorithm implementation for image segmentation.
+ * @author Kelian Baert & Caroline de Pourtales
+ *
+ */
 public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 	public SegmentationGeneticAlgorithm(ProblemInstance problemInstance) {
 		super(problemInstance);
@@ -17,38 +22,40 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 
 	@Override
 	public List<IIndividual> createOffspring() {
+		float crossoverRate = getCrossoverRate();
+		
 		// Use tournament selection
 		int numOffsprings = getPopulation().getSize() - Main.config.getInt("elites");
 		int k = Main.config.getInt("tournamentSelectionSize");
 		float p = Main.config.getFloat("tournamentSelectionP");
-	
+		
 		List<IIndividual> offspring = new ArrayList<IIndividual>();
 		for(int i = 0; i < numOffsprings; i++) {
-			IIndividual ind = ((SimplePopulation) getPopulation()).tournamentSelection(k, p);
-			offspring.add(ind.copy());
+			IIndividual parent1 = ((SimplePopulation) getPopulation()).tournamentSelection(k, p); 
+			// Crossover
+			if(random() < crossoverRate) {
+				IIndividual parent2 = ((SimplePopulation) getPopulation()).tournamentSelection(k, p);
+				offspring.add(parent1.crossover(parent2));
+			}
+			// Copy
+			else {
+				offspring.add(parent1);
+			}
 		}
 			
 		return offspring;
 	}
 
 	@Override
-	public void insertOffspring(List<IIndividual> offspring) {
-		int elites = Main.config.getInt("elites");
-		if(elites == 0) {
-			getPopulation().getIndividuals().clear();
-			getPopulation().getIndividuals().addAll(offspring);
-		}
-		else {
-			((SimplePopulation) getPopulation()).putElitesFirst(elites);
-			for(int i = 0; i < offspring.size(); i++) {
-				getPopulation().getIndividuals().set(elites + i, offspring.get(i));
-			}
-		}
-	}
-
-	@Override
 	public void printState() {
-		System.out.println("Fitness of fittest individual: " + getPopulation().getFittestIndividual().getFitness());
+		Individual fittest = (Individual) getPopulation().getFittestIndividual(); 
+		System.out.println("Fittest individual: fitness = " + fittest.getFitness() + " (" + fittest.getSegments().size() + " segments)");
+		boolean details = true;
+		if(details) {
+			System.out.println("	Edge value = " + fittest.getEdgeValue());
+			System.out.println("	Connectivity = " + fittest.getConnectivity());
+			System.out.println("	Overall deviation = " + fittest.getOverallDeviation());
+		}
 	}
 
 	@Override
@@ -61,6 +68,4 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 		}
 		return pop;
 	}
-
-
 }

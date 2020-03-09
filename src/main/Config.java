@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Handles reading a properties file and parsing values.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public class Config {
 	private Properties properties;
 	
@@ -57,8 +61,6 @@ public class Config {
 	public int getInt(String key) {
 		return Integer.parseInt(get(key));
 	}
-	
-	
 	
 	/**
 	 * Parses a configuration file with a given name

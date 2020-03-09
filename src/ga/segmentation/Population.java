@@ -1,9 +1,5 @@
 package ga.segmentation;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import ga.GeneticAlgorithm;
 import ga.SimplePopulation;
 
@@ -12,7 +8,8 @@ public class Population extends SimplePopulation {
 		super(ga);
 	}
 
-	public LinkedList<LinkedList<Individual>> fastNonDominatedSorting (ga.Population population) {
+	
+	/*public LinkedList<LinkedList<Individual>> fastNonDominatedSorting (ga.Population population) {
 		LinkedList<LinkedList<Individual>> fronts = new LinkedList<LinkedList<Individual>>();
 		LinkedList<Individual> F1 = new LinkedList<Individual>();
 		for (Individual i : this.getIndividuals()) {
@@ -52,6 +49,7 @@ public class Population extends SimplePopulation {
 			fronts.add(currentFi);
 		}
 		return fronts;
-	}
+	}*/
 
+	
 }

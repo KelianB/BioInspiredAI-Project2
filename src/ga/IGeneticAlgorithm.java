@@ -4,6 +4,10 @@ import java.util.List;
 
 import problem.IProblemInstance;
 
+/**
+ * An interface describing a general purpose Genetic Algorithm.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public interface IGeneticAlgorithm {
 	/**
 	 * Creates the initial population for this GA instance
@@ -61,4 +65,28 @@ public interface IGeneticAlgorithm {
 	 * @return the mutation rate
 	 */
 	public float getMutationRate();
+	
+	/**
+	 * Set the GA's crossover rate.
+	 * @param r - The new crossover rate
+	 */
+	public void setCrossoverRate(float r);
+	
+	/**
+	 * Get the GA's crossover rate
+	 * @return the crossover rate
+	 */
+	public float getCrossoverRate();
+	
+	/**
+	 * Set the number of elites (0 disables elitism).
+	 * @param elites - The number of best individuals to keep at each generation
+	 */
+	public void setElites(int elites);
+	
+	/**
+	 * Get the number of elites
+	 * @return The number of best individuals to keep at each generation
+	 */
+	public int getElites();
 }

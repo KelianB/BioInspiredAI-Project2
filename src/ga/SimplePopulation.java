@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
 
+/**
+ * A simple implementation of the IPopulation interface.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public class SimplePopulation implements IPopulation {
 	private List<IIndividual> individuals;
 	private GeneticAlgorithm ga;
@@ -48,7 +52,7 @@ public class SimplePopulation implements IPopulation {
 	}
 	
 	/**
-	 * Puts the given number of best individuals at the beginning of the list, in no particular order
+	 * Puts the given number of best individuals at the beginning of the individuals list, in no particular order
 	 * @param numberOfElites - The number of elites
 	 */
 	public void putElitesFirst(int numberOfElites) {
