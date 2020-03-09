@@ -135,7 +135,6 @@ public class Population extends SimplePopulation {
 		SortedMap<Individual, Double> populationCrowdingDistance = new TreeMap<Individual, Double>();
 
 		//for each front, calculate the crowding distance of the individuals inside
-
 		for (List<Individual> front : fronts) {
 
 			for (int i = 0 ; i<front.size() ;i++ ) {
@@ -145,7 +144,7 @@ public class Population extends SimplePopulation {
 			//criterion edgeValue
 			front.sort(new SortByEdgeValue());
 
-			populationCrowdingDistance.put(front.get(0), Double.POSITIVE_INFINITY;
+			populationCrowdingDistance.put(front.get(0), Double.POSITIVE_INFINITY);
 			populationCrowdingDistance.put(front.get(front.size()-1), Double.POSITIVE_INFINITY);
 
 			double edgeValueMax = front.get(front.size()-1).getEdgeValue();
@@ -158,7 +157,7 @@ public class Population extends SimplePopulation {
 			//criterion connectivity
 			front.sort(new SortByConnectivity());
 
-			populationCrowdingDistance.put(front.get(0), Double.POSITIVE_INFINITY;
+			populationCrowdingDistance.put(front.get(0), Double.POSITIVE_INFINITY);
 			populationCrowdingDistance.put(front.get(front.size()-1), Double.POSITIVE_INFINITY);
 
 			edgeValueMax = front.get(front.size()-1).getConnectivity();
@@ -171,7 +170,7 @@ public class Population extends SimplePopulation {
 			//criterion overallDeviation
 			front.sort(new SortByOverallDeviation());
 
-			populationCrowdingDistance.put(front.get(0), Double.POSITIVE_INFINITY;
+			populationCrowdingDistance.put(front.get(0), Double.POSITIVE_INFINITY);
 			populationCrowdingDistance.put(front.get(front.size()-1), Double.POSITIVE_INFINITY);
 
 			edgeValueMax = front.get(front.size()-1).getOverallDeviation();
