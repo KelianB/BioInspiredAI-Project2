@@ -84,6 +84,14 @@ public class Tree {
 	}
 	
 	/**
+	 * Get the size of this tree.
+	 * @return the size of the tree (number of vertices)
+	 */
+	public int getSize() {
+		return parent.length;
+	}
+	
+	/**
 	 * Compute the total number of children (including indirect ones) of each tree node.
 	 * @return a Map containing the total number of children of each node
 	 */

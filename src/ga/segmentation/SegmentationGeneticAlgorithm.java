@@ -39,7 +39,7 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 			}
 			// Copy
 			else {
-				offspring.add(parent1);
+				offspring.add(parent1.copy());
 			}
 		}
 			
@@ -61,11 +61,30 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 	@Override
 	protected IPopulation createInitialPopulation() {
 		Population pop = new Population(this);
+		
 		for(int i = 0; i < Main.config.getInt("populationSize"); i++) {
 			System.out.println("Creating individual #" + i);
-			Individual ind = Individual.createRandomIndividual(this);
+			Individual ind = IndividualGenerator.createRandomIndividual(this);
 			pop.addIndividual(ind);
 		}
+		
+		// Parallel
+		/*
+		List<Thread> threads = new ArrayList<Thread>();
+		long time = System.nanoTime();
+		for(int i = 0; i < Main.config.getInt("populationSize"); i++) {
+			threads.add(new Thread(() -> pop.addIndividual(IndividualGenerator.createRandomIndividual(this))));
+			threads.get(i).start();
+		}
+		try {
+			for(Thread t : threads)
+				t.join();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		System.out.println("Created all individuals in " + (System.nanoTime() - time) / 1000000 + " ms.");
+		*/
+		
 		return pop;
 	}
 }
