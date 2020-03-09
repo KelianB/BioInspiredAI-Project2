@@ -1,12 +1,16 @@
 package ga.segmentation;
 
+
 import java.util.*;
 import java.util.stream.Collectors;
-
 import ga.IIndividual;
+import ga.GeneticAlgorithm;
 import ga.SimplePopulation;
 
 public class Population extends SimplePopulation {
+	public Population(GeneticAlgorithm ga) {
+		super(ga);
+	}
 
 	public ArrayList<ArrayList<Individual>> fastNonDominatedSorting (Population population) {
 		//list of fronts
@@ -18,6 +22,7 @@ public class Population extends SimplePopulation {
 
 		//first front : none of the individuals in it is dominated
 		ArrayList<Individual> F1 = new ArrayList<Individual>();
+
 		for (Individual i : this.getIndividuals()) {
 			int ni=0;
 			ArrayList<Individual> Si = new ArrayList<Individual>();
@@ -205,6 +210,5 @@ public class Population extends SimplePopulation {
 			}
 		}
 	}
-
 }
 

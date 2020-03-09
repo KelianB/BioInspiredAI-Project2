@@ -2,6 +2,10 @@ package ga;
 
 import java.util.List;
 
+/**
+ * An interface describing a basic population in a Genetic Algorithm.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public interface IPopulation {
 	/**
 	 * Get the individuals in the population
@@ -20,7 +24,6 @@ public interface IPopulation {
 	 * @return the number of individuals in the population
 	 */
 	public int getSize();
-	
 	
 	/**
 	 * Get the individual that has the highest fitness in the population

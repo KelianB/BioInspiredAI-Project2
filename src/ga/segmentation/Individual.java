@@ -1,18 +1,25 @@
 package ga.segmentation;
 
-import static problem.segmentation.ProblemInstance.euclideanDistance;
-
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Map;
 
+import ga.GeneticAlgorithm;
 import ga.IIndividual;
 import problem.segmentation.ProblemInstance;
 import utils.CachedValue;
+import utils.ImageUtils;
 import utils.PrimMST;
+import utils.Tree;
 
+/**
+ * A specific IIndividual implementation for the image segmentation GA.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
 public class Individual implements IIndividual {
 	public static enum Direction {NONE, UP, RIGHT, DOWN, LEFT}
 	
@@ -21,101 +28,106 @@ public class Individual implements IIndividual {
 	
 	// Store the segmentation as a list of segments
 	private List<Segment> segments;
+	
 	// Store the segmentation as a segment matrix
 	private int[] pixelSegments;
 	
 	// Store the last computed value for each objective
 	private CachedValue<Float> edgeValue, connectivity, overallDeviation;
-
+	
 	private CachedValue<Float> fitness;
 	
-	private ProblemInstance pi;
-	
-	public Individual(ProblemInstance pi) {
-		this.pi = pi;
+	// Keep a reference to the GA this individual belongs to
+	private GeneticAlgorithm ga;
+
+	public Individual(GeneticAlgorithm ga) {
+		this.ga = ga;
+		
+		ProblemInstance pi = ((ProblemInstance) ga.getProblemInstance());
+		
+		// Initialize the representation
 		this.representation = new Direction[pi.getImage().getWidth() * pi.getImage().getHeight()];
 		
-		edgeValue = new CachedValue<Float>(() -> {
-			return computeEdgeValue();
-		});
-		connectivity = new CachedValue<Float>(() -> {
-			return computeConnectivity();
-		});
-		overallDeviation = new CachedValue<Float>(() -> {
-			return computeOverallDeviation();
-		});
+		float alpha = 1 / 4.0f,
+			  beta = 1.0f,
+			  gamma = 1 / 10.0f;
+		
+		// Initialize the caches
+		edgeValue = new CachedValue<Float>(this::computeEdgeValue);
+		connectivity = new CachedValue<Float>(this::computeConnectivity);
+		overallDeviation = new CachedValue<Float>(this::computeOverallDeviation);
 
 		fitness = new CachedValue<Float>(() -> {
-			return edgeValue.getValue() + connectivity.getValue() + overallDeviation.getValue();
+			return alpha * edgeValue.getValue() - beta * connectivity.getValue() - gamma * overallDeviation.getValue();
 		});
+		
 	}
 	
+	/**
+	 * Get the edge value from cache
+	 * @return the edge value
+	 */
 	public float getEdgeValue() {
 		return edgeValue.getValue();
 	}
 	
+	/**
+	 * Get the connectivity from cache
+	 * @return the connectivity
+	 */
 	public float getConnectivity() {
 		return connectivity.getValue();
 	}
 	
+	/**
+	 * Get the overall deviation from cache
+	 * @return the overall deviation
+	 */
 	public float getOverallDeviation() {
 		return overallDeviation.getValue();
 	}
 	
 	@Override
 	public float getFitness() {
-		updateSegmentRepresentation();
 		return fitness.getValue();
 	}
 
 	@Override
 	public void mutate() {
-		int randPos = (int) (Math.random() * this.representation.length);
+		int randPos = (int) (ga.random() * this.representation.length);
+		
+		
 		Direction randDir;
 		
+		if(ga.random() < 0.0001)
+			randDir = Direction.NONE;
+		
+		Direction[] dirs = {Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT};
 		do {
-			randDir = Direction.values()[(int) (Math.random() * Direction.values().length)];
+			randDir = dirs[(int) (ga.random() * dirs.length)];
 		} while(this.representation[randPos] == randDir);
 		
 		this.representation[randPos] = randDir; 
-		
+			
+		// Update segment representation and notify that the objective values need to be updated
+		updateSegmentRepresentation();
 		edgeValue.needsUpdating();
 		connectivity.needsUpdating();
 		overallDeviation.needsUpdating();
-		
-		
+		fitness.needsUpdating();
 	}
 
 	@Override
 	public IIndividual crossover(IIndividual parentB) {
-		return null;
-	}
-	
-	/**
-	 * Create an individual using a minimum spanning tree
-	 * @param pi - The problem instance for which to create a new individual
-	 * @return a new individual
-	 */
-	public static Individual createRandomIndividual(ProblemInstance pi) {
-		Individual ind = new Individual(pi);
-		
-		// Generate a random position as the origin of the minimum spanning tree
-		int startingPos = (int) (Math.random() * pi.getImage().getWidth() * pi.getImage().getHeight());
-	
-		// Generate the minimum spanning tree
-		System.out.println("Generating minimum spanning tree...");
-		long time = System.nanoTime();
-		PrimMST minSpanningTree = new PrimMST(pi.getEuclideanDistanceGraph(), startingPos);
-		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
-		
-		// Turn the minimum spanning tree into a segmentation
-		System.out.println("Creating segmentation from minimum spanning tree...");
-		time = System.nanoTime();
-		ind.createDirectionMatrixFromMST(minSpanningTree);
-		System.out.println("Done (took " + (System.nanoTime() - time)/1000000.0 + " ms)");
-		
+		Individual ind = new Individual(ga);
+		int crossoverPoint = (int) (ga.random() * representation.length);
+		for(int i = 0; i < crossoverPoint; i++)
+			ind.representation[i] = representation[i];
+		for(int i = crossoverPoint; i < representation.length; i++)
+			ind.representation[i] = ((Individual) parentB).representation[i];
+		ind.updateSegmentRepresentation();
 		return ind;
-	}
+	}	
 
 	/**
 	 * Get the indices of a given pixel's cardinal neighbors.
@@ -123,19 +135,19 @@ public class Individual implements IIndividual {
 	 * @return a list of neighbors indices
 	 */
 	public List<Integer> getNeighbors(int i) {
-		Stream<Direction> dirs = Arrays.stream(Direction.values());
-		Stream<Integer> neighbors = dirs.map((d) -> getPixelIndex(i, d)).filter((a) -> a != -1);
-		return neighbors.collect(Collectors.toList());
+		// TODO Cache neighbors?
+		/*Stream<Direction> dirs = Arrays.stream(Direction.values());
+		Stream<Integer> neighbors = dirs.map((d) -> getPixelIndex(i, d)).filter(a -> a != -1);
+		return neighbors.collect(Collectors.toList());*/
 		
-		/*List<Integer> neighbors = new ArrayList<>(); 
+		List<Integer> neighbors = new ArrayList<>(); 
 		for(Direction d : Direction.values()) {
 			int pixel = getPixelIndex(i, d);
 			if(pixel != -1)
 				neighbors.add(pixel);
 		}
-		return neighbors;*/
+		return neighbors;
 	}
-
 
 	/**
 	 * Check if two pixels belong to the same segment
@@ -154,7 +166,7 @@ public class Individual implements IIndividual {
 	 * @return the euclidean distance between pixels i and j in RGB space if i and j don't belong to the same segment, else 0
 	 */
 	public float dist(int i, int j) {
-		return sameSegment(i, j) ? 0 : euclideanDistance(pi.getRGB(i), pi.getRGB(j));
+		return sameSegment(i, j) ? 0 : ((ProblemInstance) ga.getProblemInstance()).getEuclideanDistance(i, j);
 	}
 
 	/**
@@ -179,7 +191,7 @@ public class Individual implements IIndividual {
 		for(int i = 0; i < this.representation.length; i++) {
 			for(int n : getNeighbors(i)) {
 				if(!sameSegment(i,n))
-					connectivity += 1.0/8;
+					connectivity += 1.0f/8;
 			}
 		}
 		return connectivity;
@@ -190,6 +202,8 @@ public class Individual implements IIndividual {
 	 * @return the overalll deviation
 	 */
 	public float computeOverallDeviation() {
+		ProblemInstance pi = (ProblemInstance) ga.getProblemInstance();
+		
 		float overallDeviation = 0;
 		
 		// For each segment
@@ -199,12 +213,12 @@ public class Individual implements IIndividual {
 			
 			// Then add up the deviation for the current segment
 			for(int i : s.getPixels()) {
-				int[] rgb = pi.getRGB(i);
+				float[] hsb = pi.getHSB(i);
 				
 				overallDeviation += Math.sqrt(
-					Math.pow(rgb[0]-centroid[0], 2) +
-					Math.pow(rgb[1]-centroid[1], 2) +
-					Math.pow(rgb[2]-centroid[2], 2)
+					Math.pow(hsb[0]-centroid[0], 2) +
+					Math.pow(hsb[1]-centroid[1], 2) +
+					Math.pow(hsb[2]-centroid[2], 2)
 				);
 			}
 		}
@@ -233,16 +247,15 @@ public class Individual implements IIndividual {
 	}
 	
 	/**
-	 * Compute the segment reprentation from the directions matrix.
+	 * Compute the segment representation from the directions matrix.
 	 */
-	private void updateSegmentRepresentation() {
+	public void updateSegmentRepresentation() {
 		long time = System.nanoTime();
 		currentSegmentIndex = 0;
 		
 		// First assign each pixel to its segment
 		pixelSegments = new int[representation.length];
-		for(int i = 0; i < pixelSegments.length; i++)
-			pixelSegments[i] = -1;
+		Arrays.fill(pixelSegments, -1);
 		for(int i = 0; i < pixelSegments.length; i++) {
 			if(pixelSegments[i] == -1)
 				assignToSegment(i, new ArrayList<Integer>());
@@ -255,7 +268,7 @@ public class Individual implements IIndividual {
 
 		// Start by creating the right amount of empty segments
 		segments = new ArrayList<Segment>();
-		for(int i = 0; i <= currentSegmentIndex; i++)
+		for(int i = 0; i < currentSegmentIndex; i++)
 			segments.add(new Segment());
 		// Then add the pixels to the right segments
 		for(int i = 0; i < pixelSegments.length; i++)
@@ -272,6 +285,7 @@ public class Individual implements IIndividual {
 	 */
 	public int getPixelIndex(int source, Direction dir) {
 		int none = -1;
+		ProblemInstance pi = ((ProblemInstance) ga.getProblemInstance());
 		int w = pi.getImage().getWidth();
 				
 		switch(dir) {
@@ -302,9 +316,10 @@ public class Individual implements IIndividual {
 	 * Print this individual to the console.
 	 */
 	public void print() {
+		int width = ((ProblemInstance) ga.getProblemInstance()).getImage().getWidth();
 		String str = "";
 		for(int i = 0; i < representation.length; i++) {
-			if(i % pi.getImage().getWidth() == 0) {
+			if(i % width == 0) {
 				System.out.println(str);
 				str = "";
 			}
@@ -314,25 +329,95 @@ public class Individual implements IIndividual {
 	}
 	
 	/**
+	 * Create an individual using a minimum spanning tree
+	 * @param pi - The problem instance for which to create a new individual
+	 * @return a new individual
+	 */
+	public static Individual createRandomIndividual(GeneticAlgorithm ga) {
+		Individual ind = new Individual(ga);
+		
+		ProblemInstance pi = (ProblemInstance) ga.getProblemInstance();
+		
+		// Generate a random position as the origin of the minimum spanning tree
+		int startingPos = (int) (ga.random() * pi.getImage().getWidth() * pi.getImage().getHeight());
+		
+		// Generate the minimum spanning tree
+		System.out.println("Generating minimum spanning tree...");
+		long time = System.nanoTime();
+		Tree minSpanningTree = PrimMST.createMinimumSpanningTree(pi.getEuclideanDistanceGraph(), startingPos);
+		System.out.println("Generated minimum spanning tree in " + (System.nanoTime() - time)/1000000.0 + " ms");
+		
+		// Turn the minimum spanning tree into a segmentation
+		System.out.println("Creating segmentation from minimum spanning tree...");
+		time = System.nanoTime();
+		ind.createDirectionMatrixFromTree(minSpanningTree);
+		System.out.println("Created segmentation from mst in " + (System.nanoTime() - time)/1000000.0 + " ms");
+		
+		ind.updateSegmentRepresentation();
+		System.out.println("segments: " + ind.segments.size());
+		return ind;
+	}
+
+
+	
+	
+	private void getEdges(Tree tree, int node, List<Edge> edges) {
+		List<Integer> children = tree.getChildren(node);
+		for(int i = 0; i < children.size(); i++) {
+			int childNode = children.get(i);
+			float distance = ((ProblemInstance) ga.getProblemInstance()).getEuclideanDistanceGraph().getWeight(node, childNode);
+			edges.add(new Edge(node, childNode, distance));
+			getEdges(tree, childNode, edges);
+		}
+	}
+	
+	class Edge {
+		public int parent, child;
+		public float weight;
+		public Edge(int parent, int child, float weight) {this.parent = parent; this.child = child; this.weight = weight;}
+	}
+	
+	/**
 	 * Create a segmentation as a direction matrix from a minimum spanning tree.
 	 * @param tree - A minimum spanning tree
 	 */
-	private void createDirectionMatrixFromMST(PrimMST tree) {
-		representation[tree.getRootVertex()] = Direction.NONE;
+	public void createDirectionMatrixFromTree(Tree tree) {
+		representation[tree.getRootNode()] = Direction.NONE;
 		
-		// Begin recursive segmentation at from the tree's root vertex
-		segmentChildren(tree, tree.getRootVertex());
+		// Begin recursive segmentation from the tree's root vertex
+		segmentChildren(tree, tree.getRootNode());
 		
-		// Break single segment into multiple segment
-		int numSegments = 4 + (int) (Math.random() * 6);
-		for(int i = 0; i < numSegments; i++) {
-			int rdPos;
-			do {
-				rdPos = (int) (Math.random() * representation.length);
+		// Break single segment into multiple segment (break the segment where the rgb distance is the highest)
+		
+		// we first go through the tree in order to build a list of all edges in the tree associated with their weight in the graph
+		List<Edge> edges = new ArrayList<Edge>();
+		getEdges(tree, tree.getRootNode(), edges);
+		// then sort the edges by decreasing weight
+		edges.sort((a,b) -> (int) Math.signum(b.weight - a.weight));
+		
+		
+		Map<Integer, Integer> numberOfChildren = tree.computeNumberOfChildren();
+		for(int i = 0; i < edges.size(); i++) {
+			if(numberOfChildren.get(edges.get(i).child) < 100) {
+				edges.remove(i);
+				i--;
 			}
-			while(representation[rdPos] == Direction.NONE);
-			representation[rdPos] = Direction.NONE;
+			// System.out.println(e.weight);
 		}
+		
+		edges = edges.subList(0, (int) (edges.size() * 0.05));		
+		
+		// then break the segment
+		int numberOfSegments = 6 + (int) (ga.random() * 12);
+
+		for(int i = 0; i < numberOfSegments - 1; i++) {
+			int edge = (int) (ga.random() * edges.size());
+
+			int breakingPoint = /*edges.get(i)*/edges.get(edge).child;
+			representation[breakingPoint] = Direction.NONE;
+			edges.remove(edge);
+		}
+		
 	}
 	
 	/**
@@ -340,11 +425,36 @@ public class Individual implements IIndividual {
 	 * @param tree - A minimum spanning tree
 	 * @param vertex - A vertex in the tree
 	 */
-	private void segmentChildren(PrimMST tree, int vertex) {
+	private void segmentChildren(Tree tree, int vertex) {
+		ProblemInstance pi = ((ProblemInstance) ga.getProblemInstance());
 		for(int child : tree.getChildren(vertex)) {
 			representation[child] = pi.getDirection(child, vertex);
 			segmentChildren(tree, child);
 		}	
+	}
+	
+	public void printDirectionArray() {
+		String str = "";
+		int w = ((ProblemInstance) ga.getProblemInstance()).getImage().getWidth();
+		for(int i = 0; i < representation.length; i++) {
+			Direction d = representation[i];
+			str += (d == Direction.DOWN ? "_" : d == Direction.UP ? "^" : d == Direction.LEFT ? "<" : d == Direction.RIGHT ? ">" : d == Direction.NONE ? "o" : "?");
+			str += " ";
+			if((i+1) % w == 0)
+				str += "\n";
+		}
+		System.out.println(str);	
+	}
+	
+	public void printSegmentation() {
+		String str = "";
+		int w = ((ProblemInstance) ga.getProblemInstance()).getImage().getWidth();
+		for(int i = 0; i < representation.length; i++) {
+			str += pixelSegments[i] + " ";
+			if((i+1) % w == 0)
+				str += "\n";
+		}
+		System.out.println(str);	
 	}
 	
 	/**
@@ -363,4 +473,70 @@ public class Individual implements IIndividual {
 		return pixelSegments;
 	}
 	
+	/**
+	 * Generate the output images for the current segmentation.
+	 * @return the output images
+	 */
+	public BufferedImage[] generateImages() {
+		boolean outsideBorder = true;
+		
+		ProblemInstance pi = ((ProblemInstance) ga.getProblemInstance());
+		int w = pi.getImage().getWidth(), h = pi.getImage().getHeight();
+		
+		List<Integer> edgePixels = new ArrayList<Integer>();
+		for(int i = 0; i < pixelSegments.length; i++) {
+			// Check for outside border
+			boolean left = i % w == 0,
+					right = (i+1) % w == 0,
+					top = i < w,
+					bottom = i > (h-1)*w;
+			boolean b = outsideBorder && (left || right || top || bottom);
+			// Check for segment edge
+			b = b || (!right && (pixelSegments[i] != pixelSegments[i+1] || (!bottom && pixelSegments[i] != pixelSegments[i+w])));
+
+			if(b)
+				edgePixels.add(i);
+		}
+		
+		// First output image (overlayed green edges)
+		BufferedImage bufferedImage1 = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = bufferedImage1.createGraphics();
+        g.drawImage(pi.getImage(), 0, 0, null);
+        
+        g.setColor(new Color(0, 255, 0));
+        for(int i : edgePixels) {
+        	int[] pos = pi.pixelIndexToPos(i);
+            g.fillRect(pos[0], pos[1], 1, 1);
+        }
+        g.dispose();
+
+        // Second output image (only black edges)
+		BufferedImage bufferedImage2 = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        g = bufferedImage2.createGraphics();
+        g.setColor(Color.WHITE);
+        g.fillRect(0, 0, w, h);
+        g.setColor(Color.BLACK);
+        for(int i : edgePixels) {
+        	int[] pos = pi.pixelIndexToPos(i);
+            g.fillRect(pos[0], pos[1], 1, 1);
+        }
+        g.dispose();
+        
+        // Scale the second image back up
+        bufferedImage2 = ImageUtils.resizeImage(bufferedImage2, pi.getOriginalWidth(), pi.getOriginalHeight());
+        
+        return new BufferedImage[] {bufferedImage1, bufferedImage2};
+	}
+	
+	@Override
+	public IIndividual copy() {
+		Individual copy = new Individual(ga);
+		copy.representation = representation.clone();
+		copy.edgeValue = edgeValue.copy();
+		copy.connectivity = connectivity.copy();
+		copy.overallDeviation = overallDeviation.copy();
+		copy.fitness = fitness.copy();
+		copy.updateSegmentRepresentation();
+		return copy;
+	}
 }

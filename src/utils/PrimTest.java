@@ -30,7 +30,7 @@ public class PrimTest {
 			}
 		}
 		
-		PrimMST tree = new PrimMST(wg);
+		Tree tree = PrimMST.createMinimumSpanningTree(wg, 0);
 		System.out.println(tree);
 		
 	}
