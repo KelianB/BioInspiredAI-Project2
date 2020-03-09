@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import ga.GeneticAlgorithm;
 import ga.IIndividual;
@@ -71,7 +72,6 @@ public class Population extends SimplePopulation {
 		return fronts;
 	}
 
-	
 	public static <K, V extends Comparable<V>> Map<K, V> sortByValues(final Map<K, V> map) {
 		Comparator<K> valueComparator = (k1, k2) -> {
 			int compare = map.get(k1).compareTo(map.get(k2));
@@ -83,74 +83,94 @@ public class Population extends SimplePopulation {
 		return sortedByValues;
 	}
 
+	public List<Map<Individual, Float>> crowdingDistance(List<List<Individual>> fronts) {
 
-	public Map<Individual, Float> crowdingDistance(List<List<Individual>> fronts) {
-		SortedMap<Individual, Float> populationCrowdingDistance = new TreeMap<Individual, Float>();
+		List<Map<Individual, Float>> frontsCrowdingDistance = new ArrayList<Map<Individual, Float>>();
+		SortedMap<Individual, Float> frontCrowdingDistance;
 
 		// for each front, calculate the crowding distance of the individuals inside
 		for(List<Individual> front : fronts) {
+
+			frontCrowdingDistance = new TreeMap<Individual, Float>();
+
 			for(int i = 0; i < front.size(); i++)
-				populationCrowdingDistance.put(front.get(i), 0.0f);
+				frontCrowdingDistance.put(front.get(i), 0.0f);
 
 			// criterion edgeValue
 			front.sort((a,b) -> (int) Math.signum(b.getEdgeValue() - a.getEdgeValue()));
 
-			populationCrowdingDistance.put(front.get(0), Float.POSITIVE_INFINITY);
-			populationCrowdingDistance.put(front.get(front.size()-1), Float.POSITIVE_INFINITY);
+			frontCrowdingDistance.put(front.get(0), Float.POSITIVE_INFINITY);
+			frontCrowdingDistance.put(front.get(front.size()-1), Float.POSITIVE_INFINITY);
 
 			Float edgeValueMax = front.get(front.size()-1).getEdgeValue();
 			Float edgeValueMin = front.get(0).getEdgeValue();
 
 			for(int i = 1; i < front.size()-1; i++) {
-				populationCrowdingDistance.put(front.get(i), populationCrowdingDistance.get(front.get(i))  + (front.get(i+1).getEdgeValue() - front.get(i-1).getEdgeValue())/(edgeValueMax-edgeValueMin));
+				frontCrowdingDistance.put(front.get(i), frontCrowdingDistance.get(front.get(i))  + (front.get(i+1).getEdgeValue() - front.get(i-1).getEdgeValue())/(edgeValueMax-edgeValueMin));
 			}
 
 			// criterion connectivity
 			front.sort((a, b) -> (int) Math.signum(b.getConnectivity() - a.getConnectivity()));
 
-			populationCrowdingDistance.put(front.get(0), Float.POSITIVE_INFINITY);
-			populationCrowdingDistance.put(front.get(front.size()-1), Float.POSITIVE_INFINITY);
+			frontCrowdingDistance.put(front.get(0), Float.POSITIVE_INFINITY);
+			frontCrowdingDistance.put(front.get(front.size()-1), Float.POSITIVE_INFINITY);
 
 			edgeValueMax = front.get(front.size()-1).getConnectivity();
 			edgeValueMin = front.get(0).getConnectivity();
 
 			for(int i = 1; i < front.size()-1 ; i++) {
-				populationCrowdingDistance.put(front.get(i), populationCrowdingDistance.get(front.get(i))  + (front.get(i+1).getConnectivity() - front.get(i-1).getConnectivity())/(edgeValueMax-edgeValueMin));
+				frontCrowdingDistance.put(front.get(i), frontCrowdingDistance.get(front.get(i))  + (front.get(i+1).getConnectivity() - front.get(i-1).getConnectivity())/(edgeValueMax-edgeValueMin));
 			}
 
 			// criterion overallDeviation
 			front.sort((a,b) -> (int) Math.signum(b.getOverallDeviation() - a.getOverallDeviation()));
 
-			populationCrowdingDistance.put(front.get(0), Float.POSITIVE_INFINITY);
-			populationCrowdingDistance.put(front.get(front.size()-1), Float.POSITIVE_INFINITY);
-			
+			frontCrowdingDistance.put(front.get(0), Float.POSITIVE_INFINITY);
+			frontCrowdingDistance.put(front.get(front.size()-1), Float.POSITIVE_INFINITY);
+
 			edgeValueMax = front.get(front.size()-1).getOverallDeviation();
 			edgeValueMin = front.get(0).getOverallDeviation();
 
 			for(int i = 1; i < front.size()-1; i++) {
-				populationCrowdingDistance.put(front.get(i), populationCrowdingDistance.get(front.get(i))  + (front.get(i+1).getOverallDeviation() - front.get(i-1).getOverallDeviation())/(edgeValueMax-edgeValueMin));
+				frontCrowdingDistance.put(front.get(i), frontCrowdingDistance.get(front.get(i))  + (front.get(i+1).getOverallDeviation() - front.get(i-1).getOverallDeviation())/(edgeValueMax-edgeValueMin));
 			}
-		}
 
-		Map sortedMap = sortByValues(populationCrowdingDistance);
-		return sortedMap;
+			Map sortedMap = sortByValues(frontCrowdingDistance);
+			frontsCrowdingDistance.add(sortedMap);
+		}
+		return frontsCrowdingDistance;
 	}
 
-	public Individual binaryTournamentSelection(ArrayList<ArrayList<Individual>> fronts, Map<Individual, Float> sortedMap) {
-		int frontParent1 = (int) (ga.random() * fronts.size());
-		Individual parent1 = fronts.get(frontParent1).get((int) (ga.random() * fronts.get(frontParent1).size()));
+	public List<Map<Individual, Float>> selection (List<Map<Individual, Float>> fronts) {
+		List<Map<Individual, Float>> newPopulation = new ArrayList<Map<Individual, Float>>();
+		int n = 0;
+		for (int i = 0 ; i< fronts.size() ;i++) {
+			Map<Individual, Float> front = new TreeMap<Individual, Float>();
+			for (Individual ind : fronts.get(i).keySet()) {
+				while (n<this.getSize()) {
+					 front.put(ind,fronts.get(i).get(ind));
+					 n++;
+				}
+			}
+			newPopulation.add(front);
+		}
+		return newPopulation;
+	}
 
-		int frontParent2 = (int) (ga.random() * fronts.size());
-		Individual parent2 = fronts.get(frontParent2).get((int) (ga.random() * fronts.get(frontParent1).size()));
+	public Individual binaryTournamentSelection(List<Map<Individual, Float>> sortedFronts) {
+		int frontParent1 = (int) (ga.random() * sortedFronts.size());
+		Individual parent1 = new ArrayList<>(sortedFronts.get(frontParent1).keySet()).get((int) (ga.random() * sortedFronts.get(frontParent1).size()));
+
+		int frontParent2 = (int) (ga.random() * sortedFronts.size());
+		Individual parent2 = new ArrayList<>(sortedFronts.get(frontParent2).keySet()).get((int) (ga.random() * sortedFronts.get(frontParent2).size()));
 
 		if(frontParent1 < frontParent2)
 			return parent1;
 		else if(frontParent1 > frontParent2)
 			return parent2;
 		else
-			return sortedMap.get(parent1) < sortedMap.get(parent2) ? parent1 : parent2;
+			return sortedFronts.get(frontParent1).get(parent1) < sortedFronts.get(frontParent2).get(parent2) ? parent1 : parent2;
 	}
-	
 
 	/**
 	 * Update the normalization factors for the weighted sum (means and standard deviations)
