@@ -21,6 +21,13 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 	}
 
 	@Override
+	public void runGeneration() {
+		super.runGeneration();
+		if(getGenerationsRan() % 10 == 0)
+			((Population) getPopulation()).updateNormalizationValues();
+	}
+	
+	@Override
 	public List<IIndividual> createOffspring() {
 		float crossoverRate = getCrossoverRate();
 		
@@ -85,6 +92,7 @@ public class SegmentationGeneticAlgorithm extends GeneticAlgorithm {
 		System.out.println("Created all individuals in " + (System.nanoTime() - time) / 1000000 + " ms.");
 		*/
 		
+		pop.updateNormalizationValues();
 		return pop;
 	}
 }

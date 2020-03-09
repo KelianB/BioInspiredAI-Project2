@@ -53,9 +53,9 @@ public class Individual implements IIndividual {
 			this.updateSegmentRepresentation();
 		}
 			
-		float alpha = 1 / 4.0f,
+		float alpha = 1.0f,
 			  beta = 1.0f,
-			  gamma = 1 / 10.0f;
+			  gamma = 1.0f;
 		
 		// Initialize the caches
 		edgeValue = new CachedValue<Float>(this::computeEdgeValue);
@@ -63,7 +63,10 @@ public class Individual implements IIndividual {
 		overallDeviation = new CachedValue<Float>(this::computeOverallDeviation);
 
 		fitness = new CachedValue<Float>(() -> {
-			return alpha * edgeValue.getValue() + beta * connectivity.getValue() + gamma * overallDeviation.getValue();
+			Population pop = (Population) ga.getPopulation();
+			return alpha * pop.normalizeEdgeValue(edgeValue.getValue()) + 
+				beta * pop.normalizeConnectivity(connectivity.getValue()) + 
+				gamma * pop.normalizeOverallDeviation(overallDeviation.getValue());
 		});
 		
 	}

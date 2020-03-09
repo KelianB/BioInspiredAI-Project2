@@ -10,7 +10,7 @@ import java.util.PriorityQueue;
  */
 public class SimplePopulation implements IPopulation {
 	private List<IIndividual> individuals;
-	private GeneticAlgorithm ga;
+	protected GeneticAlgorithm ga;
 	
 	public SimplePopulation(GeneticAlgorithm ga) {
 		individuals = new ArrayList<IIndividual>();
