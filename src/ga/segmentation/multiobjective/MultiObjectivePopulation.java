@@ -74,31 +74,6 @@ public class MultiObjectivePopulation extends Population {
 		// Let the superclass create the offspring, using the same tournament selection logic we use in the weighted-sum GA 
 		// (but with our new comparator)
 		return super.createOffspring();
-		
-		/*float crossoverRate = ga.getCrossoverRate();
-		
-		// Use tournament selection
-		int numOffsprings = getSize() - ga.getElites();
-		int k = Main.config.getInt("tournamentSelectionSize");
-		float p = Main.config.getFloat("tournamentSelectionP");
-		
-		List<IIndividual> offspring = new ArrayList<IIndividual>();
-		while(offspring.size() < numOffsprings) {
-			IIndividual parent1 = tournamentSelection(k, p); 
-			// Crossover
-			if(ga.random() < crossoverRate) {
-				IIndividual parent2 = tournamentSelection(k, p);
-				offspring.add(parent1.crossover(parent2));
-				if(offspring.size() < numOffsprings)
-					offspring.add(parent2.crossover(parent1));
-			}
-			// Copy
-			else {
-				offspring.add(parent1.copy());
-			}
-		}
-			
-		return offspring;*/
 	}
 	
 	@Override
@@ -121,7 +96,6 @@ public class MultiObjectivePopulation extends Population {
 		
 		// Update the fronts again so we only have the current population in the fronts storage
 		updateFrontsAndCrowdingDistances(pool);*/
-		
 		
 		List<IIndividual> newpop = new ArrayList<IIndividual>();
 		while(newpop.size() < getSize()) {

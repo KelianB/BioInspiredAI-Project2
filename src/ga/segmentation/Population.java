@@ -34,11 +34,9 @@ public class Population extends SimplePopulation {
 					offspring.add(parent2.crossover(parent1));
 			}
 			// Copy
-			else {
+			else
 				offspring.add(parent1.copy());
-			}
 		}
-			
 		return offspring;
 	}
 }
