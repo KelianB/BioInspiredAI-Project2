@@ -6,7 +6,7 @@ import java.util.Map;
 
 import ga.segmentation.Individual.Direction;
 import problem.segmentation.ProblemInstance;
-import utils.FasterPrimMST;
+import utils.FastPrimMST;
 import utils.Tree;
 
 /**
@@ -27,7 +27,7 @@ public class IndividualGenerator {
 		
 		// Generate the minimum spanning tree
 		long time = System.nanoTime();
-		Tree minSpanningTree = FasterPrimMST.createMinimumSpanningTree(pi.getEuclideanDistanceGraph(), startingPos);
+		Tree minSpanningTree = FastPrimMST.createMinimumSpanningTree(pi.getEuclideanDistanceGraph(), startingPos);
 		long mstGenTime = (System.nanoTime() - time) / 1000000;
 		
 		// Turn the minimum spanning tree into a segmentation

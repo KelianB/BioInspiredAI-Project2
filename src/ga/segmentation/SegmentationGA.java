@@ -48,14 +48,9 @@ public class SegmentationGA extends GeneticAlgorithm {
 	@Override
 	protected IPopulation createInitialPopulation() {
 		Population pop = new Population(this);
+		
 		int popSize = Main.config.getInt("populationSize");
 		int poolSize =  Main.config.getInt("initialPopulationPool");
-		
-		/*for(int i = 0; i < popSize; i++) {
-			System.out.println("Creating individual #" + i);
-			Individual ind = IndividualGenerator.createRandomIndividual(this);
-			pop.addIndividual(ind);
-		}*/
 		
 		List<IIndividual> inds = new ArrayList<IIndividual>();
 		for(int i = 0; i < poolSize; i++) {

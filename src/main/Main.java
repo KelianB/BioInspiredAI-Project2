@@ -11,37 +11,58 @@ import ga.segmentation.SegmentationGA;
 import ga.segmentation.multiobjective.MultiObjectivePopulation;
 import ga.segmentation.multiobjective.MultiObjectiveSegmentationGA;
 import problem.segmentation.ProblemInstance;
+import problem.segmentation.ProblemInstance.ColorMode;
 import problem.segmentation.ProblemReader;
+import utils.ImageUtils;
 
 /**
  * Entry point
  * @author Kelian Baert & Caroline de Pourtales
  */
 public class Main {
-	private static final String PROBLEMS_DIR = "../../Training/";
+	public static enum Mode {WEIGHTED_SUM_GA, MOEA};
+	public static Mode mode;
+	
 	public static Config config;
+	
+	private static boolean clearedOutputDirs = false;
 	
 	public static void main(String[] args) {
 		// Read configuration file
 		config = new Config("config.properties");
 		
 		// Create a problem reader
-		ProblemReader reader = new ProblemReader(PROBLEMS_DIR, config.getFloat("imageScaling"));
+		ProblemReader reader = new ProblemReader(ColorMode.valueOf(config.get("colorMode")), config.getFloat("imageScaling"));
 		
 		// Read a problem instance
-		final ProblemInstance instance = reader.readProblem("118035");
+		String inputImagePath = config.get("inputImage");
+		final ProblemInstance instance = reader.readProblem(inputImagePath);
 		
 		// Abort if the problem instance couldn't be read
-		if(instance == null)
+		if(instance == null) {
+			System.err.println("[Critical Error] Couldn't read problem instance.");
 			System.exit(1);
+		}
 		
 		// Print information about the problem instance
-		System.out.println("Problem instance " + instance.getName());
+		System.out.println("Problem instance " + inputImagePath);
 		System.out.println("Resized image size from " + instance.getOriginalWidth() + "x" + instance.getOriginalHeight() + 
 				" to " + instance.getImage().getWidth() + "x" + instance.getImage().getHeight());
 		
+		// Get the mode from the config (weighted sum or MOEA)
+		mode = Mode.valueOf(config.get("mode"));
+		
 		// Init GA
-		SegmentationGA sga = new MultiObjectiveSegmentationGA(instance, config.getFloat("mutationRate"), config.getFloat("crossoverRate"));
+		SegmentationGA sga =
+			mode == Mode.WEIGHTED_SUM_GA ? new SegmentationGA(instance, config.getFloat("mutationRate"), config.getFloat("crossoverRate")) :
+			mode == Mode.MOEA ? new MultiObjectiveSegmentationGA(instance, config.getFloat("mutationRate"), config.getFloat("crossoverRate")) :
+			null;
+			
+		if(sga == null) {
+			System.err.println("[Critical Error] Couldn't parse GA mode.");
+			System.exit(1);
+		}
+		
 		sga.setElites(config.getInt("elites"));
 		sga.initializePopulation();
 		
@@ -70,54 +91,51 @@ public class Main {
 			sga.printState();
 			System.out.println("(" + (System.nanoTime() - time) / 1000000 + " ms)");
 		}
-		
-        
-		// TESTING 
-		
-		/*System.out.println("Creating a random individual:");
-		Individual ind = Individual.createRandomIndividual(sga, instance);
-		ind.getFitness();
-		//ind.print();
-		System.out.println("Number of segments: " + ind.getSegments().size());
-		*/
-		
-		
-		/*File file = new File(PROBLEMS_DIR + "debug_image.png");
-		BufferedImage img;
-		try {
-			img = ImageIO.read(file);
-			SegmentationGeneticAlgorithm testSga = new SegmentationGeneticAlgorithm(new ProblemInstance(img, 1));
-			
-			System.out.println("Creating a random individual:");
-			Individual ind = Individual.createRandomIndividual(testSga);
-			ind.print();
-			System.out.println("Number of segments: " + ind.getSegments().size());
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}*/
 	}
 	
+	/**
+	 * Saves an individual's segmentation images
+	 * @param pi - A problem instance
+	 * @param ind - An individual
+	 */
 	private static void saveImages(ProblemInstance pi, Individual ind) {
 		ind.updateSegmentRepresentation();
 		
 		int numSegments = ind.getSegments().size();
 		
-		BufferedImage[] images = ind.generateImages();
+		BufferedImage[] images = ImageUtils.generateImages(pi, ind);
 	    try {
+	    	if(!clearedOutputDirs) {
+	    		clearDirectory(new File(config.get("outputDir")));
+	    		clearDirectory(new File(config.get("evaluationDir")));
+	    		clearedOutputDirs = true;
+	    	}
+	    	
 	    	// Save both images in the output directory
 	    	for(int i = 0; i < images.length; i++) {
-	    		File file = new File(config.get("outputDir") + pi.getName() + "/segmentation_" + numSegments + "_" + (i+1) + ".png");
+	    		File file = new File(config.get("outputDir") + "segmentation_" + numSegments + "_" + (i+1) + ".png");
 	    		file.mkdirs();
 	    		ImageIO.write(images[i], "png", file);
 	    	}
 	    	
 	    	// Also save the image for evaluation
-	    	File evalFile = new File(config.get("evaluationDir") + "/segmentation_" + pi.getName() + "_" + numSegments + ".png");
+	    	File evalFile = new File(config.get("evaluationDir") + "segmentation_" + numSegments + ".png");
 	    	evalFile.mkdir();
 	    	ImageIO.write(images[1], "png", evalFile);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Removes all files in a given directory
+	 * @param dir - A directory
+	 */
+	private static void clearDirectory(File dir) {
+	    File[] files = dir.listFiles();
+	    if(files != null) { // some JVMs return null for empty directories
+	        for(File f: files)
+	            f.delete();
+	    }
 	}
 }

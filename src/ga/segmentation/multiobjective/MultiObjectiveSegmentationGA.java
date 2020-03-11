@@ -1,11 +1,12 @@
 package ga.segmentation.multiobjective;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import ga.IIndividual;
 import ga.IPopulation;
 import ga.segmentation.Individual;
 import ga.segmentation.IndividualGenerator;
-import ga.segmentation.Population;
 import ga.segmentation.SegmentationGA;
 import main.Main;
 import problem.segmentation.ProblemInstance;
@@ -17,13 +18,20 @@ public class MultiObjectiveSegmentationGA extends SegmentationGA {
 
 	@Override
 	protected IPopulation createInitialPopulation() {
-		Population pop = new MultiObjectivePopulation(this);
+		MultiObjectivePopulation pop = new MultiObjectivePopulation(this);
 		
-		for(int i = 0; i < Main.config.getInt("populationSize"); i++) {
-			System.out.println("Creating individual #" + i);
-			Individual ind = IndividualGenerator.createRandomIndividual(this);
-			pop.addIndividual(ind);
+		int popSize = Main.config.getInt("populationSize");
+		int poolSize =  Main.config.getInt("initialPopulationPool");
+		
+		List<IIndividual> inds = new ArrayList<IIndividual>();
+		for(int i = 0; i < poolSize; i++) {
+			System.out.println("Creating individual #" + i + "/" + poolSize);
+			inds.add(IndividualGenerator.createRandomIndividual(this));
 		}
+		pop.updateFrontsAndCrowdingDistances(inds);
+		inds.sort(pop.getSelectionComparator());
+		pop.setIndividuals(inds.subList(0, popSize));
+		System.out.println("Initial population: " + pop.getFirstFront().size() + " individuals in the first front");
 		
 		return pop;
 	}
@@ -41,6 +49,10 @@ public class MultiObjectiveSegmentationGA extends SegmentationGA {
 				System.out.println("  firstfront." + i + ": " + ind.getSegments().size() + " segments, fitness = " + ind.getFitness());
 			}
 		}
+		
+		/*for(Individual i : ((MultiObjectivePopulation) getPopulation()).getFirstFront())
+			System.out.println(i.getEdgeValue() + "," + i.getConnectivity() + "," + i.getOverallDeviation());*/
+		
 	}
 	
 	// No fitness-based elitism

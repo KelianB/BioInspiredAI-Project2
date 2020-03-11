@@ -28,7 +28,9 @@ public class MultiObjectivePopulation extends Population {
 	 * Update the fronts and crowding distances for the given individuals
 	 * @param individuals
 	 */
-	private void updateFrontsAndCrowdingDistances(List<IIndividual> iindividuals) {
+	protected void updateFrontsAndCrowdingDistances(List<IIndividual> iindividuals) {
+		boolean printTimes = false;
+		
 		// Cast IIndividual to Individual
 		List<Individual> individuals = new ArrayList<Individual>();
 		for(IIndividual i : iindividuals)
@@ -37,8 +39,8 @@ public class MultiObjectivePopulation extends Population {
 		long time = System.nanoTime();
 		// Update the fronts
 		fastNonDominatedSorting(individuals);
-		System.out.println("Fast non-dominated sorting took " + (System.nanoTime() - time) / 1000000 + " ms");
-		
+		long fndsTime = (System.nanoTime() - time) / 1000000;
+	
 		// Store a Individual:frontIndex map for fast access
 		frontMap.clear();
 		for(int i = 0; i < fronts.size(); i++) {
@@ -48,7 +50,11 @@ public class MultiObjectivePopulation extends Population {
 		
 		time = System.nanoTime();
 		updateCrowdingDistances();
-		System.out.println("Computing crowding distances took " + (System.nanoTime() - time) / 1000000 + " ms");
+		long cdTime = (System.nanoTime() - time) / 1000000;
+		if(printTimes) {
+			System.out.println("Fast non-dominated sorting took " + fndsTime + " ms");
+			System.out.println("Computing crowding distances took " + cdTime + " ms");
+		}
 	}
 	
 	/** 
@@ -78,6 +84,7 @@ public class MultiObjectivePopulation extends Population {
 	
 	@Override
 	public void insertOffspring(List<IIndividual> offspring) {
+		// Create or pull of 2n individuals
 		List<IIndividual> pool = new ArrayList<IIndividual>();
 		pool.addAll(getIndividuals());
 		pool.addAll(offspring);
@@ -87,26 +94,14 @@ public class MultiObjectivePopulation extends Population {
 		
 		System.out.println("Number of fronts for pop + offspring: " + fronts.size());
 		
-		// Reject to cull down parent+offspring to the right amount of individuals
+		// Reject to cull down parent+offspring to n individuals
 		pool.sort(getSelectionComparator());
-		
-		/*pool = pool.subList(0, getSize());
+		pool = pool.subList(0, getSize());
 
 		setIndividuals(pool);
 		
 		// Update the fronts again so we only have the current population in the fronts storage
-		updateFrontsAndCrowdingDistances(pool);*/
-		
-		List<IIndividual> newpop = new ArrayList<IIndividual>();
-		while(newpop.size() < getSize()) {
-			pool.sort(getSelectionComparator());
-			newpop.add(pool.remove(0));
-			updateFrontsAndCrowdingDistances(pool);
-		}
-		setIndividuals(newpop);
-		
-		// Update the fronts again so we only have the current population in the fronts storage
-		updateFrontsAndCrowdingDistances(newpop);
+		updateFrontsAndCrowdingDistances(pool);
 	}
 	
 	private void fastNonDominatedSorting(List<Individual> individuals) {
@@ -126,10 +121,9 @@ public class MultiObjectivePopulation extends Population {
 			ArrayList<Individual> idominating = new ArrayList<Individual>(); // individuals i is dominating
 
 			for(Individual j : individuals) {
-				// j dominates i
-				if(i.getEdgeValue() < j.getEdgeValue() && i.getConnectivity() < j.getConnectivity() && i.getOverallDeviation() < j.getOverallDeviation())
+				if(dominates(j, i))
 					idominatedBy++;
-				else if(i.getEdgeValue() > j.getEdgeValue() && i.getConnectivity() > j.getConnectivity() && i.getOverallDeviation() > j.getOverallDeviation())
+				else if(dominates(i, j))
 					idominating.add(j);
 			}
 			if(idominatedBy == 0)
@@ -140,7 +134,7 @@ public class MultiObjectivePopulation extends Population {
 		}
 
 		// Other fronts
-		ArrayList<Individual> currentFi = new ArrayList<Individual>(fronts.get(0));
+		List<Individual> currentFi = new ArrayList<Individual>(fronts.get(0));
 		while(!currentFi.isEmpty()) {
 			List<Individual> newFront = new ArrayList<Individual>();
 			for(Individual i : currentFi) {
@@ -153,9 +147,9 @@ public class MultiObjectivePopulation extends Population {
 				}
 			}
 			
-			currentFi = new ArrayList<Individual>(newFront);
-			if(!currentFi.isEmpty())
-				fronts.add(currentFi);
+			if(!newFront.isEmpty())
+				fronts.add(new ArrayList<Individual>(newFront));
+			currentFi = newFront;
 		}
 	}
 
@@ -177,6 +171,12 @@ public class MultiObjectivePopulation extends Population {
 		}
 	}
 	
+	/**
+	 * Computes the crowding distances for one front, on a given objective function
+	 * @param front - The front
+	 * @param objectiveFunction - The objective function
+	 * @param crowdingDistances - A map in which to store crowding distances
+	 */
 	private void addCrowdingDistances(List<Individual> front, Function<Individual, Float> objectiveFunction, Map<Individual, Float> crowdingDistances) {
 		front.sort((a,b) -> (int) Math.signum(objectiveFunction.apply(b) - objectiveFunction.apply(a)));
 		
@@ -192,6 +192,26 @@ public class MultiObjectivePopulation extends Population {
 			crowdingDistances.put(front.get(i), crowdingDistances.get(front.get(i)) +
 					(objectiveFunction.apply(front.get(i+1)) - objectiveFunction.apply(front.get(i-1))) / (objectiveMax - objectiveMin));
 		}
+	}
+	
+	/**
+	 * Check whether or not individual i dominates individual j
+	 * @param i - An individual
+	 * @param j - Another individual
+	 * @return true if i dominates j, else false
+	 */
+	private static boolean dominates(Individual i, Individual j) {
+		float ia = i.getEdgeValue(), ib = i.getConnectivity(), ic = i.getOverallDeviation();
+		float ja = j.getEdgeValue(), jb = j.getConnectivity(), jc = j.getOverallDeviation();
+		
+		if(ia >= ja && ib > jb && ic > jc)
+			return true;
+		if(ia > ja && ib >= jb && ic > jc)
+			return true;
+		if(ia > ja && ib > jb && ic >= jc)
+			return true;
+		
+		return false;
 	}
 	
 	

@@ -15,6 +15,8 @@ import utils.WeightedGraph;
  * @author Kelian Baert & Caroline de Pourtales
  */
 public class ProblemInstance implements IProblemInstance {
+	public static enum ColorMode {RGB, HSB};
+	
 	// The problem instance's image
 	private BufferedImage image;
 	
@@ -28,10 +30,13 @@ public class ProblemInstance implements IProblemInstance {
 	private float imageScaling;
 	
 	// Store the RGB of each pixel as a matrix of [r, g, b] integer arrays
-	private int[][][] rgb;
+	private float[][][] rgb;
 	
 	// Store the HSB (hue, saturation, brightness) of each pixel as a matrix of [h, s, b] integer arrays
 	private float[][][] hsb;
+	
+	// The color mode (HSB or RGB)
+	private ColorMode colorMode;
 	
 	// A graph in which each pixel is connected to its cardinal neighbors with weights equal to the euclidean distances in HSB space
 	private WeightedGraph euclideanDistanceGraph;
@@ -44,26 +49,28 @@ public class ProblemInstance implements IProblemInstance {
 	 * Create a new problem instance
 	 * @param name - The name of this problem instance
 	 * @param originalImage - An image
+	 * @param colorMode - The color mode (either ColorMode.HSB or ColorMode.RGB)
 	 * @param imageScaling - A ratio by which to scale the input image
 	 */
-	public ProblemInstance(String name, BufferedImage originalImage, float imageScaling) {
-		this.name = name;
+	public ProblemInstance(BufferedImage originalImage, ColorMode colorMode, float imageScaling) {
+		this.name = "img";
 		this.originalWidth = originalImage.getWidth();
 		this.originalHeight = originalImage.getHeight();
 		this.image = imageScaling == 1 ? originalImage : ImageUtils.scaleImage(originalImage, imageScaling);
+		this.colorMode = colorMode;
 		this.imageScaling = imageScaling;
 		
 		int w = image.getWidth(), h = image.getHeight();
 		
 		// Store the RGB and HSB of each pixel in three-dimensional arrays of shape (width, height, 3)
-		rgb = new int[w][h][3];
+		rgb = new float[w][h][3];
 		hsb = new float[w][h][3];
 		for(int x = 0; x < w; x++) {
 			for(int y = 0; y < h; y++) {
 				Color c = new Color(getImage().getRGB(x, y));
-				rgb[x][y][0] = c.getRed();
-				rgb[x][y][1] = c.getGreen();
-				rgb[x][y][2] = c.getBlue();
+				rgb[x][y][0] = c.getRed() / 255.0f;
+				rgb[x][y][1] = c.getGreen() / 255.0f;
+				rgb[x][y][2] = c.getBlue() / 255.0f;
 				hsb[x][y] = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
 			}	
 		}
@@ -99,44 +106,24 @@ public class ProblemInstance implements IProblemInstance {
 	}
 	
 	/**
-	 * Get the RGB at a given position of the image.
+	 * Get the color value (either RGB or HSB depending on the color mode) at a given position of the image.
 	 * @param x - A horizontal position
 	 * @param y - A vertical position
-	 * @return the rgb at position (x, y), as a [r, g, b] float array
+	 * @return the color value at position (x, y), as a [r,g,b] or [h,s,b] float array
 	 */
-	private int[] getRGB(int x, int y) {
-		return rgb[x][y];
+	private float[] getColorValue(int x, int y) {
+		return colorMode == ColorMode.RGB ? rgb[x][y] : hsb[x][y];
 	}
 	
 	/**
-	 * Get the RGB of a given pixel index in the image.
+	 * Get the color value (either RGB or HSB depending on the color mode) of a given pixel index in the image.
 	 * @param i - A pixel index (between 0 and width*height)
-	 * @return the rgb at pixel index i, as a [r, g, b] float array
+	 * @return the color values at pixel index i, as a [r,g,b] or [h,s,b] float array
 	 */
-	public int[] getRGB(int i) {
+	public float[] getColorValue(int i) {
 		int[] pos = pixelIndexToPos(i);
-		return getRGB(pos[0], pos[1]);
+		return getColorValue(pos[0], pos[1]);
 	}
-	
-	/**
-	 * Get the HSB value of a given pixel index in the image.
-	 * @param i - A pixel index (between 0 and width*height)
-	 * @return the hsb at pixel index i, as a [h, s, b] float array
-	 */
-	/*public float[] getHSB(int i) {
-		int[] pos = pixelIndexToPos(i);
-		return getHSB(pos[0], pos[1]);
-	}*/
-	
-	/**
-	 * Get the HSB value at a given position of the image.
-	 * @param x - A horizontal position
-	 * @param y - A vertical position
-	 * @return the hsb at position (x, y), as a [h, s, b] float array
-	 */
-	/*private float[] getHSB(int x, int y) {
-		return hsb[x][y];
-	}*/
 	
 	/**
 	 * Get the scaling factor used for the image
@@ -224,19 +211,6 @@ public class ProblemInstance implements IProblemInstance {
 	}
 	
 	/**
-	 * Calculates the euclidean distance between two one-dimensional integer arrays of same length.
-	 * @param arr1 - An array of integers
-	 * @param arr2 - Another array of integers
-	 * @return the euclidean distance between the two arrays.
-	 */
-	public static float euclideanDistance(int[] arr1, int[] arr2) {
-		float sumOfSquares = 0.0f;
-		for(int i = 0; i < arr1.length; i++)
-			sumOfSquares += Math.pow(arr1[i] - arr2[i], 2);
-		return (float) Math.sqrt(sumOfSquares);
-	}
-	
-	/**
 	 * Get the euclidean distance graph for this problem instance.
 	 * @return a graph in which each pixel is connected to its cardinal neighbors with weights equal to the euclidean distances in HSB space
 	 */
@@ -251,7 +225,7 @@ public class ProblemInstance implements IProblemInstance {
 	 * @return the euclidean distance
 	 */
 	public float getEuclideanDistance(int i, int j) {
-		return euclideanDistance(getRGB(i), getRGB(j));
+		return euclideanDistance(getColorValue(i), getColorValue(j));
 	}
 
 	/**

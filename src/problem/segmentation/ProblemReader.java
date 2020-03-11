@@ -7,31 +7,31 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import problem.IProblemReader;
+import problem.segmentation.ProblemInstance.ColorMode;
 
 /**
  * Handles reading image segmentation problem instances
  * @author Kelian Baert & Caroline de Pourtales
  */
 public class ProblemReader implements IProblemReader {
-	// The base directory where problems are stored
-	private String baseDir;
-	
 	// The scaling factor by which all instance images are scaled
 	private float imageScaling;
 	
+	// The color mode value to pass to new problem instances
+	private ColorMode colorMode;
+	
 	/**
 	 * 
-	 * @param baseDir - The base directory where problems are stored
 	 * @param imageScaling - The scaling factor by which all instance images will be scaled
 	 */
-	public ProblemReader(String baseDir, float imageScaling) {
-		this.baseDir = baseDir;
+	public ProblemReader(ColorMode colorMode, float imageScaling) {
+		this.colorMode = colorMode;
 		this.imageScaling = imageScaling;
 	}
 	
 	@Override
-	public ProblemInstance readProblem(String problemName) {
-		File file = new File(baseDir + problemName + "/Test image.jpg");
+	public ProblemInstance readProblem(String imagePath) {
+		File file = new File(imagePath);
 		
 		BufferedImage img = null;
 		try {
@@ -42,6 +42,6 @@ public class ProblemReader implements IProblemReader {
 			e.printStackTrace();
 		}
 		
-		return img == null ? null : new ProblemInstance(problemName, img, imageScaling);
+		return img == null ? null : new ProblemInstance(img, colorMode, imageScaling);
 	}
 }

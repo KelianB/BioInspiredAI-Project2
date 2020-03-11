@@ -30,7 +30,7 @@ public class PrimTest {
 			}
 		}
 		
-		Tree tree = FasterPrimMST.createMinimumSpanningTree(wg, 0);
+		Tree tree = FastPrimMST.createMinimumSpanningTree(wg, 0);
 		String str = "Edges\n"; 
 		for(int i = 1; i < tree.getSize(); i++) 
 			str += tree.getParent(i) + "-" + i + ", ";

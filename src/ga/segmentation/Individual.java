@@ -1,14 +1,8 @@
 package ga.segmentation;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 import ga.IIndividual;
 import main.Main;
@@ -117,13 +111,13 @@ public class Individual implements IIndividual {
 	@Override
 	public void mutate() {
 		float r = ga.random();
-		if(r < 0.15f*0) {
+		/*if(r < 0.15f) {
 			significantMutation();
 		}
-		/*else if(r < 0.2f) {
+		/*else if(r < 0.25f) {
 			segmentMergeMutation();
-		}*/ 
-		else {
+		}
+		else {*/
 			// Mutate on a single position
 			int randPos = (int) (ga.random() * this.representation.length);
 			
@@ -138,41 +132,7 @@ public class Individual implements IIndividual {
 				randDir = dirs[dir];
 			}
 			this.representation[randPos] = randDir; 
-		}
-		
-		/*Direction randDir = Direction.NONE;
-		
-		if(ga.random() < 0.4f)
-			segmentMergeMutation();
-		else {
-			if(ga.random() < 0.99f) {
-				Direction[] dirs = {Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT};
-				do {
-					randDir = dirs[(int) (ga.random() * dirs.length)];
-				} while(this.representation[randPos] == randDir);
-			}
-				
-			this.representation[randPos] = randDir; 
-		}*/
-		
-		
-		// Random chance of mutating each direction
-		/*for(int i = 0; i < representation.length; i++) {
-			if(ga.random() < 0.02f) {
-				Direction randDir = Direction.NONE;
-				
-				// Very low chance of keeping direction to NONE
-				if(ga.random() < 0.99) {	
-					// Find a new direction
-					Direction[] dirs = {Direction.UP, Direction.RIGHT, Direction.DOWN, Direction.LEFT};
-					do {
-						randDir = dirs[(int) (ga.random() * dirs.length)];
-					} while(representation[i] == randDir);
-				}
-				
-				representation[i] = randDir;
-			}
-		}*/
+		//}
 		
 		// Update segment representation and notify that the objective values need to be updated
 		updateSegmentRepresentation();
@@ -182,7 +142,7 @@ public class Individual implements IIndividual {
 		fitness.needsUpdating();
 	}
 	
-	private void segmentMergeMutation() {
+	/*private void segmentMergeMutation() {
 		ProblemInstance pi = ga.getProblemInstance();
 		
 		// First, find two adjacent segments
@@ -214,15 +174,9 @@ public class Individual implements IIndividual {
 				}
 			}
 		}
-		
-		/*
-		int segmentsBefore = segments.size();
-		updateSegmentRepresentation();
-		int segmentsAfter = segments.size();
-		System.out.println("before: " + segmentsBefore + ", after: " + segmentsAfter);*/
-	}
+	}*/
 
-	private void significantMutation() {
+	/*private void significantMutation() {
 		HashMap<Integer, Integer> totalChildren = new HashMap<Integer, Integer>();
 		List<Integer> remaining = computeSegmentBoundaryPixels();
 		for(int i = 0; i < representation.length; i++)
@@ -238,54 +192,9 @@ public class Individual implements IIndividual {
 		if(representation[i] == dirs[dir])
 			dir = (dir+1) % dirs.length;
 		representation[i] = dirs[dir];
-	}
-	
-	/**
-	 * Get a list of pixels that are at boundary with another segment.
-	 * @return a list of pixels
-	 */
-	private List<Integer> computeSegmentBoundaryPixels() {
-		ProblemInstance pi = ga.getProblemInstance();
-		int w = pi.getImage().getWidth(), h = pi.getImage().getHeight();
+	}*/
 		
-		List<Integer> boundaryPixels = new ArrayList<Integer>();
-		for(int i = 0; i < pixelSegments.length; i++) {
-			// Check if on the very right or very bottom of the image
-			boolean right = (i+1) % w == 0, 
-					bottom = i >= (h-1)*w;
-			// Check for segment edge
-			if((!right && pixelSegments[i] != pixelSegments[i+1]) || (!bottom && pixelSegments[i] != pixelSegments[i+w]))
-				boundaryPixels.add(i);
-		}
-		
-		return boundaryPixels;
-	}
-	
-	/**
-	 * Get a list of pixels tha are on the outer boundary of the image.
-	 * @return a list of pixels
-	 */
-	private List<Integer> computeImageBoundaryPixels() {
-		ProblemInstance pi = ga.getProblemInstance();
-		int w = pi.getImage().getWidth(), h = pi.getImage().getHeight();
-		
-		List<Integer> boundaryPixels = new ArrayList<Integer>();
-		for(int i = 0; i < pixelSegments.length; i++) {
-			// Check for outside border
-			boolean left = i % w == 0,
-					right = (i+1) % w == 0,
-					top = i < w,
-					bottom = i >= (h-1)*w;
-			if(left || right || top || bottom)
-				boundaryPixels.add(i);
-		}
-		
-		return boundaryPixels;
-	}
-	
-	
-
-	private int getTotalChildren(int i, HashMap<Integer, Integer> totalChildren, List<Integer> remaining) {
+	/*private int getTotalChildren(int i, HashMap<Integer, Integer> totalChildren, List<Integer> remaining) {
 		if(totalChildren.containsKey(i))
 			return totalChildren.get(i);
 		remaining.remove((Object) i);
@@ -305,7 +214,7 @@ public class Individual implements IIndividual {
 		}
 		totalChildren.put(i, pointingToward);
 		return pointingToward;
-	}
+	}*/
 	
 	@Override
 	public IIndividual crossover(IIndividual iparentB) {
@@ -329,6 +238,27 @@ public class Individual implements IIndividual {
 				
 		ind.updateSegmentRepresentation();
 		return ind;
+	}
+	
+	/**
+	 * Get a list of pixels that are at boundary with another segment.
+	 * @return a list of pixels
+	 */
+	public List<Integer> computeSegmentBoundaryPixels() {
+		ProblemInstance pi = ga.getProblemInstance();
+		int w = pi.getImage().getWidth(), h = pi.getImage().getHeight();
+		
+		List<Integer> boundaryPixels = new ArrayList<Integer>();
+		for(int i = 0; i < pixelSegments.length; i++) {
+			// Check if on the very right or very bottom of the image
+			boolean right = (i+1) % w == 0, 
+					bottom = i >= (h-1)*w;
+			// Check for segment edge
+			if((!right && pixelSegments[i] != pixelSegments[i+1]) || (!bottom && pixelSegments[i] != pixelSegments[i+w]))
+				boundaryPixels.add(i);
+		}
+		
+		return boundaryPixels;
 	}
 
 	/**
@@ -396,12 +326,12 @@ public class Individual implements IIndividual {
 			
 			// Then add up the deviation for the current segment
 			for(int i : s.getPixels()) {
-				int[] hsb = pi.getRGB(i);
+				float[] color = pi.getColorValue(i);
 				
 				overallDeviation += Math.sqrt(
-					Math.pow(hsb[0]-centroid[0], 2) +
-					Math.pow(hsb[1]-centroid[1], 2) +
-					Math.pow(hsb[2]-centroid[2], 2)
+					Math.pow(color[0]-centroid[0], 2) +
+					Math.pow(color[1]-centroid[1], 2) +
+					Math.pow(color[2]-centroid[2], 2)
 				);
 			}
 		}
@@ -519,50 +449,6 @@ public class Individual implements IIndividual {
 				str += "\n";
 		}
 		System.out.println(str);	
-	}
-	
-	/**
-	 * Generate the output images for the current segmentation.
-	 * @return the output images
-	 */
-	public BufferedImage[] generateImages() {
-		ProblemInstance pi = ga.getProblemInstance();
-		int w = pi.getImage().getWidth(), h = pi.getImage().getHeight();
-		
-		Set<Integer> edgePixels = new TreeSet<Integer>();
-		edgePixels.addAll(computeSegmentBoundaryPixels());
-		edgePixels.addAll(computeImageBoundaryPixels());
-		
-		// First output image (overlayed green edges)
-		BufferedImage bufferedImage1 = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = bufferedImage1.createGraphics();
-        g.drawImage(pi.getImage(), 0, 0, null);
-        g.setColor(new Color(0, 255, 0));
-        for(int i : edgePixels) {
-        	int[] pos = pi.pixelIndexToPos(i);
-            g.fillRect(pos[0], pos[1], 1, 1);
-        }
-        g.dispose();
-
-        // Second output image (only black edges)
-        BufferedImage bufferedImage2 = new BufferedImage(pi.getOriginalWidth(), pi.getOriginalHeight(), BufferedImage.TYPE_INT_RGB);
-        //BufferedImage bufferedImage2 = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-        g = bufferedImage2.createGraphics();
-        g.setColor(Color.WHITE);
-        g.fillRect(0, 0, bufferedImage2.getWidth(), bufferedImage2.getHeight());
-        g.setColor(Color.BLACK);
-        float r = 1.0f / pi.getImageScaling();
-        for(int i : edgePixels) {
-        	int[] pos = pi.pixelIndexToPos(i);
-            g.fillRect((int) (pos[0]*r), (int) (pos[1]*r), 1, 1);
-            // g.fillRect(pos[0], pos[1], 1, 1);
-        }
-        g.dispose();
-        
-        // Scale the second image back up
-        //bufferedImage2 = ImageUtils.resizeImage(bufferedImage2, pi.getOriginalWidth(), pi.getOriginalHeight());*/
-        
-        return new BufferedImage[] {bufferedImage1, bufferedImage2};
 	}
 	
 	@Override

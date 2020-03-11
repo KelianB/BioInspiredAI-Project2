@@ -47,10 +47,10 @@ public class Segment {
     	List<Integer> pixels = getPixels();
     	float numPixels = (float) pixels.size();
 		for(int i : pixels) {
-			int[] hsb = pi.getRGB(i);
-			centroid[0] += hsb[0] / numPixels;
-			centroid[1] += hsb[1] / numPixels;
-			centroid[2] += hsb[2] / numPixels;
+			float[] color = pi.getColorValue(i);
+			centroid[0] += color[0] / numPixels;
+			centroid[1] += color[1] / numPixels;
+			centroid[2] += color[2] / numPixels;
 		}
 		
 		return centroid;

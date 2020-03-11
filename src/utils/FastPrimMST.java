@@ -2,7 +2,12 @@ package utils;
 
 import java.util.TreeSet; 
 
-public class FasterPrimMST { 
+
+/**
+ * Creates Minimum Spanning Trees using Prim's algorithm.
+ * @author Kelian Baert & Caroline de Pourtales
+ */
+public class FastPrimMST { 
 	/**
 	 * Creates a Minimum Spanning Tree (MST) for a given graph, starting at a given node.
 	 * @param graph - A graph as an adjacency matrix

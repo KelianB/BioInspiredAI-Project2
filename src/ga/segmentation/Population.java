@@ -8,6 +8,7 @@ import ga.GeneticAlgorithm;
 import ga.IIndividual;
 import ga.SimplePopulation;
 import main.Main;
+import main.Main.Mode;
 
 public class Population extends SimplePopulation {
 	public Population(GeneticAlgorithm ga) {
@@ -20,8 +21,8 @@ public class Population extends SimplePopulation {
 		
 		// Use tournament selection
 		int numOffsprings = getSize() - ga.getElites();
-		int k = Main.config.getInt("tournamentSelectionSize");
-		float p = Main.config.getFloat("tournamentSelectionP");
+		int k = Main.config.getInt(Main.mode == Mode.WEIGHTED_SUM_GA ? "WSGA_tournamentSelectionSize" : "MOEA_tournamentSelectionSize");
+		float p = Main.config.getFloat(Main.mode == Mode.WEIGHTED_SUM_GA ? "WSGA_tournamentSelectionP" : "MOEA_tournamentSelectionP");
 		
 		List<IIndividual> offspring = new ArrayList<IIndividual>();
 		while(offspring.size() < numOffsprings) {

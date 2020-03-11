@@ -108,7 +108,7 @@ public abstract class SimplePopulation implements IPopulation {
 		for(int i = 0; i < tournamentSize; i++)
 			pool.add(getIndividuals().get((int) (ga.random() * getIndividuals().size())));
 		
-		// Sort by decreasing fitness
+		// Sort using the selection comparator
 		pool.sort(getSelectionComparator());
 		
 		// Extract an individual
