@@ -43,7 +43,7 @@ public class PrimMST {
 			// int u = minKey(key, mstSet); 
 
 			int u = key.get(0).vertex;
-						
+			
 			// Add the picked vertex to the MST Set 
 			mstSet[u] = true; 
 			key.remove(0);
@@ -77,6 +77,8 @@ public class PrimMST {
 	private static <T> int binarySearch(List<T> sortedList, Comparable<T> item, int low, int high) { 
 		if(sortedList.size() == 0)
 			return 0;
+		if(low >= sortedList.size())
+			return sortedList.size();
 		
 	    if (high <= low) 
 	        return (item.compareTo(sortedList.get(low)) == 1)?  (low + 1): low; 
@@ -92,8 +94,8 @@ public class PrimMST {
 	} 
 	
 	private static class VertexKeyPair implements Comparable<VertexKeyPair> {
-		private int vertex;
-		private float key;
+		public int vertex;
+		public float key;
 		
 		public VertexKeyPair(int vertex, float key) {
 			this.vertex = vertex;

@@ -7,7 +7,6 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import problem.IProblemReader;
-import problem.ProblemReadingException;
 
 /**
  * Handles reading image segmentation problem instances
@@ -31,18 +30,18 @@ public class ProblemReader implements IProblemReader {
 	}
 	
 	@Override
-	public ProblemInstance readProblem(String problemName) throws ProblemReadingException {
+	public ProblemInstance readProblem(String problemName) {
 		File file = new File(baseDir + problemName + "/Test image.jpg");
 		
-		BufferedImage img;
+		BufferedImage img = null;
 		try {
 			img = ImageIO.read(file);
 		}
 		catch (IOException e) {
+			System.err.println("Exception raised while reading problem instance:");
 			e.printStackTrace();
-			throw new ProblemReadingException();
 		}
 		
-		return new ProblemInstance(problemName, img, imageScaling);
+		return img == null ? null : new ProblemInstance(problemName, img, imageScaling);
 	}
 }

@@ -36,6 +36,10 @@ public class ProblemInstance implements IProblemInstance {
 	// A graph in which each pixel is connected to its cardinal neighbors with weights equal to the euclidean distances in HSB space
 	private WeightedGraph euclideanDistanceGraph;
 	
+	// Cache pixel neighbors to save time
+	private List<List<Integer>> pixel4NeighborsCache;
+	private List<List<Integer>> pixel8NeighborsCache;
+	
 	/**
 	 * Create a new problem instance
 	 * @param name - The name of this problem instance
@@ -63,29 +67,27 @@ public class ProblemInstance implements IProblemInstance {
 				hsb[x][y] = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
 			}	
 		}
+		
+		// Initialize the neighbor caches
+		pixel4NeighborsCache = new ArrayList<List<Integer>>();
+		for(int i = 0; i < w*h; i++)
+			pixel4NeighborsCache.add(compute4Neighbors(i));
+		
+		pixel8NeighborsCache = new ArrayList<List<Integer>>();
+		for(int i = 0; i < w*h; i++)
+			pixel8NeighborsCache.add(compute8Neighbors(i));
 				
 		// Create a graph in which each pixel is connected to its 4 cardinal neighbours.
 		// The weight of the edges are given by the euclidean distance in HSB color space
-		euclideanDistanceGraph = new WeightedGraph(image.getWidth()*image.getHeight());
+		euclideanDistanceGraph = new WeightedGraph(w*h);
 		for(int x = 0; x < w; x++) {
 			for(int y = 0; y < h; y++) {
-				List<int[]> cardinalNeighbours = new ArrayList<int[]>();
-				if(x > 0)   cardinalNeighbours.add(new int[] {x-1, y});
-				if(x < w-1) cardinalNeighbours.add(new int[] {x+1, y});
-				if(y > 0)   cardinalNeighbours.add(new int[] {x, y-1});
-				if(y < h-1) cardinalNeighbours.add(new int[] {x, y+1});
-					
-				for(int i = 0; i < cardinalNeighbours.size(); i++) {
-					int x2 = cardinalNeighbours.get(i)[0], y2 = cardinalNeighbours.get(i)[1];
-					euclideanDistanceGraph.addConnection(
-						y*w+x, // position of current pixel in flattened coordinates
-						y2*w+x2, // position of neighbour in flattened coordinates
-						//euclideanDistance(getRGB(x, y), getRGB(x2, y2))
-						euclideanDistance(getHSB(x, y), getHSB(x2, y2))
-					);
-				}
+				int i = y*w+x; // position of current pixel in flattened coordinates
+				for(int neighbour : get4Neighbors(i))
+					euclideanDistanceGraph.addConnection(i, neighbour, getEuclideanDistance(i, neighbour));
 			}	
 		}
+		
 	}
 	
 	/**
@@ -107,16 +109,6 @@ public class ProblemInstance implements IProblemInstance {
 	}
 	
 	/**
-	 * Get the HSB value at a given position of the image.
-	 * @param x - A horizontal position
-	 * @param y - A vertical position
-	 * @return the hsb at position (x, y), as a [h, s, b] float array
-	 */
-	private float[] getHSB(int x, int y) {
-		return hsb[x][y];
-	}
-	
-	/**
 	 * Get the RGB of a given pixel index in the image.
 	 * @param i - A pixel index (between 0 and width*height)
 	 * @return the rgb at pixel index i, as a [r, g, b] float array
@@ -131,10 +123,20 @@ public class ProblemInstance implements IProblemInstance {
 	 * @param i - A pixel index (between 0 and width*height)
 	 * @return the hsb at pixel index i, as a [h, s, b] float array
 	 */
-	public float[] getHSB(int i) {
+	/*public float[] getHSB(int i) {
 		int[] pos = pixelIndexToPos(i);
 		return getHSB(pos[0], pos[1]);
-	}
+	}*/
+	
+	/**
+	 * Get the HSB value at a given position of the image.
+	 * @param x - A horizontal position
+	 * @param y - A vertical position
+	 * @return the hsb at position (x, y), as a [h, s, b] float array
+	 */
+	/*private float[] getHSB(int x, int y) {
+		return hsb[x][y];
+	}*/
 	
 	/**
 	 * Get the scaling factor used for the image
@@ -249,7 +251,79 @@ public class ProblemInstance implements IProblemInstance {
 	 * @return the euclidean distance
 	 */
 	public float getEuclideanDistance(int i, int j) {
-		return euclideanDistance(getHSB(i), getHSB(j));
+		return euclideanDistance(getRGB(i), getRGB(j));
+	}
+
+	/**
+	 * Get the indices of a given pixel's 4 cardinal neighbors.
+	 * @param i - A pixel index
+	 * @return a list of neighbors indices
+	 */
+	public List<Integer> get4Neighbors(int i) {
+		return pixel4NeighborsCache.get(i);
+	}
+	
+	/**
+	 * Get the indices of a given pixel's 8 neighbors.
+	 * @param i - A pixel index
+	 * @return a list of neighbors indices
+	 */
+	public List<Integer> get8Neighbors(int i) {
+		return pixel8NeighborsCache.get(i);
+	}
+	
+	/**
+	 * Compute the indices of a given pixel's 4 cardinal neighbors.
+	 * @param i - A pixel index
+	 * @return a list of neighbors indices
+	 */
+	private List<Integer> compute4Neighbors(int i) {
+		int w = getImage().getWidth(), h = getImage().getHeight();
+		
+		// Check if the pixel is on one of the outside borders on the image		
+		boolean left = i % w == 0,
+				right = (i+1) % w == 0,
+				top = i < w,
+				bottom = i >= (h-1)*w;
+	
+		List<Integer> neighbors = new ArrayList<>(); 
+		if(!right) neighbors.add(i+1);
+		if(!left) neighbors.add(i-1);
+		if(!top) neighbors.add(i-w);
+		if(!bottom) neighbors.add(i+w);
+
+		return neighbors;
+	}
+	
+	/**
+	 * Compute the indices of a given pixel's 8 neighbors.
+	 * @param i - A pixel index
+	 * @return a list of neighbors indices
+	 */
+	private List<Integer> compute8Neighbors(int i) {
+		int w = getImage().getWidth(), h = getImage().getHeight();
+		
+		// Check if the pixel is on one of the outside borders on the image		
+		boolean left = i % w == 0,
+				right = (i+1) % w == 0,
+				top = i < w,
+				bottom = i >= (h-1)*w;
+	
+		List<Integer> neighbors = new ArrayList<>(); 
+		if(!right) neighbors.add(i+1);
+		if(!left) neighbors.add(i-1);
+		if(!top) neighbors.add(i-w);
+		if(!bottom) neighbors.add(i+w);
+		if(!right) {
+			if(!top) neighbors.add(i-w+1);
+			if(!bottom) neighbors.add(i+w+1);
+		}
+		if(!left) {
+			if(!top) neighbors.add(i-w-1);
+			if(!bottom) neighbors.add(i+w-1);
+		}
+				
+		return neighbors;
 	}
 
 	@Override

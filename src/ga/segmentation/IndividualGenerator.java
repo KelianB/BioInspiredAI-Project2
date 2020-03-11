@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import ga.GeneticAlgorithm;
 import ga.segmentation.Individual.Direction;
 import problem.segmentation.ProblemInstance;
-import utils.PrimMST;
+import utils.FasterPrimMST;
 import utils.Tree;
 
 /**
@@ -20,34 +19,34 @@ public class IndividualGenerator {
 	 * @param pi - The problem instance for which to create a new individual
 	 * @return a new individual
 	 */
-	public static Individual createRandomIndividual(GeneticAlgorithm ga) {
-		ProblemInstance pi = (ProblemInstance) ga.getProblemInstance();
+	public static Individual createRandomIndividual(SegmentationGA ga) {
+		ProblemInstance pi = ga.getProblemInstance();
 		
 		// Generate a random position as the origin of the minimum spanning tree
 		int startingPos = (int) (ga.random() * pi.getImage().getWidth() * pi.getImage().getHeight());
 		
 		// Generate the minimum spanning tree
 		long time = System.nanoTime();
-		Tree minSpanningTree = PrimMST.createMinimumSpanningTree(pi.getEuclideanDistanceGraph(), startingPos);
-		System.out.println("Generated minimum spanning tree in " + (System.nanoTime() - time)/1000000.0 + " ms");
+		Tree minSpanningTree = FasterPrimMST.createMinimumSpanningTree(pi.getEuclideanDistanceGraph(), startingPos);
+		long mstGenTime = (System.nanoTime() - time) / 1000000;
 		
 		// Turn the minimum spanning tree into a segmentation
 		time = System.nanoTime();
 		Direction[] genotype = createDirectionMatrixFromTree(ga, minSpanningTree);
-		System.out.println("Created segmentation from mst in " + (System.nanoTime() - time)/1000000.0 + " ms");
-		
+		long segTime = (System.nanoTime() - time) / 1000000;
+				
 		Individual ind = new Individual(ga, genotype);
-		System.out.println("segments: " + ind.getSegments().size());
+		
+		System.out.println("Generated new individual (MST: " + mstGenTime + "ms, segmentation: " + segTime + "ms). Segments: " + ind.getSegments().size());
 		return ind;
 	}
-
 
 	private static class Edge {
 		public int node;
 		public float weight;
 		public Edge(int node, float weight) {this.node = node; this.weight = weight;}
 	}
-	
+
 	private static void getEdges(ProblemInstance pi, Tree tree, int node, List<Edge> edges) {
 		List<Integer> children = tree.getChildren(node);
 		for(int i = 0; i < children.size(); i++) {
@@ -61,8 +60,8 @@ public class IndividualGenerator {
 	 * Create a segmentation as a direction matrix from a minimum spanning tree.
 	 * @param tree - A minimum spanning tree
 	 */
-	private static Direction[] createDirectionMatrixFromTree(GeneticAlgorithm ga, Tree tree) {
-		ProblemInstance pi = (ProblemInstance) ga.getProblemInstance();
+	private static Direction[] createDirectionMatrixFromTree(SegmentationGA ga, Tree tree) {
+		ProblemInstance pi = ga.getProblemInstance();
 		
 		// Create a blank genotype
 		Direction[] directions = new Direction[tree.getSize()];
@@ -71,28 +70,33 @@ public class IndividualGenerator {
 		// Begin recursive segmentation from the tree's root vertex
 		segmentChildren(pi, tree, tree.getRootNode(), directions);
 		
+		/*for(Direction d : directions) {
+			if(d == null)
+				System.out.println("NULL DIRECTION IN INITIAL SEGMENTATION");
+		}*/
+		
 		// Break single segment into multiple segment (break the segment where the rgb distance is the highest)
 		
 		// we first go through the tree in order to build a list of all edges in the tree associated with their weight in the graph
 		List<Edge> edges = new ArrayList<Edge>();
 		getEdges(pi, tree, tree.getRootNode(), edges);
-		// then sort the edges by decreasing weight
-		edges.sort((a,b) -> (int) Math.signum(b.weight - a.weight));
 		
+		// remove edges that have a low number of children
 		Map<Integer, Integer> numberOfChildren = tree.computeNumberOfChildren();
 		for(int i = 0; i < edges.size(); i++) {
-			if(numberOfChildren.get(edges.get(i).node) < 200) {
+			if(numberOfChildren.get(edges.get(i).node) < 150) {
 				edges.remove(i);
 				i--;
 			}
-			// System.out.println(e.weight);
 		}
 		
-		edges = edges.subList(0, (int) (edges.size() * 0.05));		
+		int numberOfSegments = 5 + (int) (ga.random() * 30);
+
+		// then sort the edges by decreasing weight and keep only the edges with good enough weight
+		edges.sort((a,b) -> (int) Math.signum(b.weight - a.weight));	
+		edges = edges.subList(0, Math.min(edges.size()-1, numberOfSegments*20));		
 		
 		// then break the segment
-		int numberOfSegments = 4 + (int) (ga.random() * 20);
-
 		for(int i = 0; i < numberOfSegments - 1; i++) {
 			int edge = (int) (ga.random() * edges.size());
 

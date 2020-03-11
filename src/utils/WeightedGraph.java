@@ -30,9 +30,7 @@ public class WeightedGraph {
 	 * @param weight - The weight of the connection
 	 */
 	public void addConnection(int vertexA, int vertexB, float weight) {
-		// Add connection both ways
-		this.connections[vertexA].add(new WeightedConnection(vertexB, weight));
-		this.connections[vertexB].add(new WeightedConnection(vertexA, weight));
+		this.connections[vertexA].add(new WeightedConnection(vertexB, weight));		
 	}
 	
 	/**

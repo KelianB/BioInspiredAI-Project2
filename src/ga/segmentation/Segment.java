@@ -16,7 +16,7 @@ public class Segment {
     /**
      * Create a new empty segment.
      */
-    public Segment () {
+    public Segment() {
         this.pixels = new ArrayList<Integer>();
     }
     
@@ -47,7 +47,7 @@ public class Segment {
     	List<Integer> pixels = getPixels();
     	float numPixels = (float) pixels.size();
 		for(int i : pixels) {
-			float[] hsb = pi.getHSB(i);
+			int[] hsb = pi.getRGB(i);
 			centroid[0] += hsb[0] / numPixels;
 			centroid[1] += hsb[1] / numPixels;
 			centroid[2] += hsb[2] / numPixels;

@@ -7,8 +7,9 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import ga.segmentation.Individual;
-import ga.segmentation.SegmentationGeneticAlgorithm;
-import problem.ProblemReadingException;
+import ga.segmentation.SegmentationGA;
+import ga.segmentation.multiobjective.MultiObjectivePopulation;
+import ga.segmentation.multiobjective.MultiObjectiveSegmentationGA;
 import problem.segmentation.ProblemInstance;
 import problem.segmentation.ProblemReader;
 
@@ -17,7 +18,7 @@ import problem.segmentation.ProblemReader;
  * @author Kelian Baert & Caroline de Pourtales
  */
 public class Main {
-	public static final String PROBLEMS_DIR = "../../Training/";
+	private static final String PROBLEMS_DIR = "../../Training/";
 	public static Config config;
 	
 	public static void main(String[] args) {
@@ -28,27 +29,41 @@ public class Main {
 		ProblemReader reader = new ProblemReader(PROBLEMS_DIR, config.getFloat("imageScaling"));
 		
 		// Read a problem instance
-		ProblemInstance instance = null;
-		try {
-			instance = reader.readProblem("118035");
-		}
-		catch(ProblemReadingException e) {
-			System.err.println("Couldn't read problem instance.");
-			e.printStackTrace();
-		}
+		final ProblemInstance instance = reader.readProblem("118035");
+		
+		// Abort if the problem instance couldn't be read
+		if(instance == null)
+			System.exit(1);
 		
 		// Print information about the problem instance
 		System.out.println("Problem instance " + instance.getName());
 		System.out.println("Resized image size from " + instance.getOriginalWidth() + "x" + instance.getOriginalHeight() + 
 				" to " + instance.getImage().getWidth() + "x" + instance.getImage().getHeight());
 		
-		SegmentationGeneticAlgorithm sga = new SegmentationGeneticAlgorithm(instance);
-		sga.setMutationRate(config.getFloat("mutationRate"));
-		sga.setCrossoverRate(config.getFloat("crossoverRate"));
+		// Init GA
+		SegmentationGA sga = new MultiObjectiveSegmentationGA(instance, config.getFloat("mutationRate"), config.getFloat("crossoverRate"));
 		sga.setElites(config.getInt("elites"));
-		
 		sga.initializePopulation();
-		for(int i = 0; i < 100; i++) {
+		
+		// on weighted-sum GA termination: save fittest
+		Runnable onTerminationGA = () ->  {
+			System.out.println("Saving fittest");
+	        saveImages(instance, ((Individual) sga.getPopulation().getFittestIndividual()));			
+		};
+		
+		// on MOEA termination: save first front
+		Runnable onTerminationMOEA = () ->  {
+			System.out.println("Saving first front");
+			for(Individual i : ((MultiObjectivePopulation) sga.getPopulation()).getFirstFront())
+				saveImages(instance, i);
+		};
+		
+		Runnable onFinish = sga instanceof MultiObjectiveSegmentationGA ? onTerminationMOEA : onTerminationGA;
+		
+		// Define the shutdown hook to execute on termination
+		Runtime.getRuntime().addShutdownHook(new Thread(onFinish));
+		
+		for(int i = 0; i < config.getInt("generations"); i++) {
 			long time = System.nanoTime();
 			System.out.println("---------- Running generation #" + i + " ----------");
 			sga.runGeneration();
@@ -56,32 +71,8 @@ public class Main {
 			System.out.println("(" + (System.nanoTime() - time) / 1000000 + " ms)");
 		}
 		
-		Individual fittest = ((Individual) sga.getPopulation().getFittestIndividual());
-		fittest.updateSegmentRepresentation();
-			 
-        // Save images of fittest
-		BufferedImage[] images = fittest.generateImages();
-        try {
-        	for(int i = 0; i < images.length; i++) {
-        		File file = new File(config.get("outputDir") + instance.getName() + "/segmentation" + (i+1) + ".png");
-        		file.mkdirs();
-        		ImageIO.write(images[i], "png", file);
-        	}
-        	File evalFile = new File(config.get("evaluationDir") + "/segmentation_" + instance.getName() + ".png");
-        	evalFile.mkdir();
-        	ImageIO.write(images[1], "png", evalFile);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		
-		
-        
-        
-        
         
 		// TESTING 
-		
 		
 		/*System.out.println("Creating a random individual:");
 		Individual ind = Individual.createRandomIndividual(sga, instance);
@@ -89,7 +80,6 @@ public class Main {
 		//ind.print();
 		System.out.println("Number of segments: " + ind.getSegments().size());
 		*/
-		
 		
 		
 		/*File file = new File(PROBLEMS_DIR + "debug_image.png");
@@ -106,5 +96,28 @@ public class Main {
 		catch (IOException e) {
 			e.printStackTrace();
 		}*/
+	}
+	
+	private static void saveImages(ProblemInstance pi, Individual ind) {
+		ind.updateSegmentRepresentation();
+		
+		int numSegments = ind.getSegments().size();
+		
+		BufferedImage[] images = ind.generateImages();
+	    try {
+	    	// Save both images in the output directory
+	    	for(int i = 0; i < images.length; i++) {
+	    		File file = new File(config.get("outputDir") + pi.getName() + "/segmentation_" + numSegments + "_" + (i+1) + ".png");
+	    		file.mkdirs();
+	    		ImageIO.write(images[i], "png", file);
+	    	}
+	    	
+	    	// Also save the image for evaluation
+	    	File evalFile = new File(config.get("evaluationDir") + "/segmentation_" + pi.getName() + "_" + numSegments + ".png");
+	    	evalFile.mkdir();
+	    	ImageIO.write(images[1], "png", evalFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -38,7 +38,8 @@ public class Tree {
 		for(int i = 0; i < children.length; i++)
 			children[i] = new ArrayList<Integer>();
 		
-		parent[rootNode] = NO_PARENT;
+		for(int i = 0; i < size; i++)
+			parent[i] = NO_PARENT;
 	}
 		
 	/**
@@ -68,7 +69,7 @@ public class Tree {
 		if(parentNode == node)
 			System.err.println("[TREE ERROR] A tree node cannot be assigned as its own parent.");
 		// If the node was a child, remove it from the corresponding children list
-		if(parent[node] != -1)
+		if(parent[node] != NO_PARENT)
 			children[parent[node]].remove((Object) node);
 		// Assign new parent
 		parent[node] = parentNode;
@@ -122,6 +123,13 @@ public class Tree {
 	 * Test the integrity of the tree a print potential problems.
 	 */
 	public void test() {
+		// Test for non-root nodes having no parents
+		for(int i = 0; i < getSize(); i++) {
+			if(parent[i] == NO_PARENT && i != getRootNode())
+				System.err.println("[TREE ERROR] Non-root node has no parent");
+		}
+		
+		// Test for nodes being their own parents, or belonging to two children list
 		List<Integer> visitedChildren = new ArrayList<Integer>();
 		for(int i = 0; i < parent.length; i++) {
 			for(int j = 0; j < getChildren(i).size(); j++) {
@@ -134,13 +142,16 @@ public class Tree {
 					visitedChildren.add(child);
 			}
 		}
+		
+		// Test for non-connected nodes
+		/*for(int i = 0; i < getSize(); i++) {
+			if(!visitedChildren.contains(i) && i != getRootNode())
+				System.out.println("[TREE ERROR] Node " + i + " is not connected");
+		}*/
 	}
 	
 	@Override
 	public String toString() {
-		/*String str = "Edges\n"; 
-		for(int i = 1; i < getGraph().getNumVertices(); i++) 
-			str += parent[i] + "-" + i + ", ";*/
 		String str = "";
 		for(int i = 0; i < children.length; i++)
 			str += i + ": " + String.join(",", children[i].stream().map(val -> val+"").collect(Collectors.toList())) + "\n";

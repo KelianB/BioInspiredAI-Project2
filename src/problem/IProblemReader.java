@@ -11,5 +11,5 @@ public interface IProblemReader {
 	 * @return a problem instance
 	 * @throws ProblemReadingException
 	 */
-	public IProblemInstance readProblem(String problemName) throws ProblemReadingException;
+	public IProblemInstance readProblem(String problemName);
 }

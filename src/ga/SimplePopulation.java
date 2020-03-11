@@ -1,6 +1,7 @@
 package ga;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -8,7 +9,7 @@ import java.util.PriorityQueue;
  * A simple implementation of the IPopulation interface.
  * @author Kelian Baert & Caroline de Pourtales
  */
-public class SimplePopulation implements IPopulation {
+public abstract class SimplePopulation implements IPopulation {
 	private List<IIndividual> individuals;
 	protected GeneticAlgorithm ga;
 	
@@ -18,15 +19,20 @@ public class SimplePopulation implements IPopulation {
 	}
 	
 	@Override
+	public void addIndividual(IIndividual ind) {
+		this.individuals.add(ind);
+	}
+	
+	@Override
+	public void setIndividuals(List<IIndividual> inds) {
+		this.individuals = inds;
+	}
+
+	@Override
 	public List<IIndividual> getIndividuals() {
 		return individuals;
 	}
 	
-	@Override
-	public void addIndividual(IIndividual ind) {
-		this.individuals.add(ind);
-	}
-
 	@Override
 	public int getSize() {
 		return individuals.size();
@@ -51,6 +57,27 @@ public class SimplePopulation implements IPopulation {
 		return getIndividuals().get(maxIndex);
 	}
 	
+	@Override
+	public void insertOffspring(List<IIndividual> offspring) {
+		// No elitism - replace whole population
+		if(ga.getElites() == 0) {
+			getIndividuals().clear();
+			getIndividuals().addAll(offspring);
+		}
+		// Elitism - replace population except n best
+		else {
+			putElitesFirst(ga.getElites());
+			for(int i = 0; i < offspring.size(); i++)
+				getIndividuals().set(ga.getElites() + i, offspring.get(i));
+		}
+	}
+	
+	@Override
+	public Comparator<IIndividual> getSelectionComparator() {
+		// By default, just compare individuals by fitness
+		return (a,b) -> (int) (Math.signum(b.getFitness() - a.getFitness()));
+	}
+	
 	/**
 	 * Puts the given number of best individuals at the beginning of the individuals list, in no particular order
 	 * @param numberOfElites - The number of elites
@@ -59,7 +86,7 @@ public class SimplePopulation implements IPopulation {
 		if(numberOfElites == 0)
 			return;
 		
-		PriorityQueue<IIndividual> heap = new PriorityQueue<>(getIndividuals().size(), IIndividual.descendingFitnessComparator);
+		PriorityQueue<IIndividual> heap = new PriorityQueue<>(getIndividuals().size(), getSelectionComparator());
 		heap.addAll(getIndividuals());
 		for(int i = 0; i < numberOfElites; i++) {
 			IIndividual next = heap.poll();
@@ -82,7 +109,7 @@ public class SimplePopulation implements IPopulation {
 			pool.add(getIndividuals().get((int) (ga.random() * getIndividuals().size())));
 		
 		// Sort by decreasing fitness
-		pool.sort(IIndividual.descendingFitnessComparator);
+		pool.sort(getSelectionComparator());
 		
 		// Extract an individual
 		if(p == 1)

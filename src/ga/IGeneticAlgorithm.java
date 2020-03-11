@@ -1,7 +1,5 @@
 package ga;
 
-import java.util.List;
-
 import problem.IProblemInstance;
 
 /**
@@ -30,29 +28,7 @@ public interface IGeneticAlgorithm {
 	 */
 	public void printState();
 	
-	/**
-	 * Get the number of generations that have been ran
-	 * @return the number of generations that have been ran
-	 */
-	public int getGenerationsRan();
-	
-	/**
-	 * Create offspring from the current population 
-	 * @return
-	 */
-	public List<IIndividual> createOffspring();
-	
-	/**
-	 * Insert offspring into the population
-	 * @param offspring - A list of offspring
-	 */
-	public void insertOffspring(List<IIndividual> offspring);
-	
-	/**
-	 * Get the problem instance this GA operates on
-	 * @return the problem instance
-	 */
-	public IProblemInstance getProblemInstance();
+	/* SETTERS */
 	
 	/**
 	 * Set the GA's mutation rate.
@@ -61,28 +37,42 @@ public interface IGeneticAlgorithm {
 	public void setMutationRate(float r);
 	
 	/**
-	 * Get the GA's mutation rate
-	 * @return the mutation rate
-	 */
-	public float getMutationRate();
-	
-	/**
 	 * Set the GA's crossover rate.
 	 * @param r - The new crossover rate
 	 */
 	public void setCrossoverRate(float r);
 	
 	/**
-	 * Get the GA's crossover rate
-	 * @return the crossover rate
-	 */
-	public float getCrossoverRate();
-	
-	/**
 	 * Set the number of elites (0 disables elitism).
 	 * @param elites - The number of best individuals to keep at each generation
 	 */
 	public void setElites(int elites);
+	
+	/* GETTERS */
+	
+	/**
+	 * Get the number of generations that have been ran
+	 * @return the number of generations that have been ran
+	 */
+	public int getGenerationsRan();
+	
+	/**
+	 * Get the problem instance this GA operates on
+	 * @return the problem instance
+	 */
+	public IProblemInstance getProblemInstance();
+	
+	/**
+	 * Get the GA's mutation rate
+	 * @return the mutation rate
+	 */
+	public float getMutationRate();
+	
+	/**
+	 * Get the GA's crossover rate
+	 * @return the crossover rate
+	 */
+	public float getCrossoverRate();
 	
 	/**
 	 * Get the number of elites

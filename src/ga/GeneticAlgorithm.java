@@ -16,14 +16,18 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 	private float mutationRate, crossoverRate;
 	private int elites;
 	private Random random;
-	
-	public GeneticAlgorithm(IProblemInstance problemInstance) {
+
+	public GeneticAlgorithm(IProblemInstance problemInstance, float mutationRate, float crossoverRate) {
 		this.problemInstance = problemInstance;
 		this.generationsRan = 0;
-		this.mutationRate = 0.0f;
-		this.crossoverRate = 0.0f;
+		this.mutationRate = mutationRate;
+		this.crossoverRate = crossoverRate;
 		this.elites = 0;
 		this.random = new Random();
+	}
+	
+	public GeneticAlgorithm(IProblemInstance problemInstance) {
+		this(problemInstance, 0, 0);
 	}
 
 	@Override
@@ -49,22 +53,26 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 		// Create offsprings
 		long globalTime = System.nanoTime();
 		long time = System.nanoTime();
-		List<IIndividual> offspring = createOffspring();
+		List<IIndividual> offspring = population.createOffspring();
 		if(printTimes)
 			System.out.println("Creating offspring took " + (System.nanoTime() - time) / 1000000 + "ms");
 		
-		// Mutate
+		// Mutate (handles mutation rates higher than 1)
 		time = System.nanoTime();
 		for(int i = 0; i < offspring.size(); i++) {
-			if(random() < getMutationRate())
-				offspring.get(i).mutate();
+			float r = getMutationRate();
+			while(r > 0) {
+				if(r >= 1 || random() < r)
+					offspring.get(i).mutate();
+				r -= 1;
+			}
 		}
 		if(printTimes)
 			System.out.println("Mutating took " + (System.nanoTime() - time) / 1000000 + "ms");
 		
 		// Insert offspring
 		time = System.nanoTime();
-		this.insertOffspring(offspring);
+		population.insertOffspring(offspring);
 		if(printTimes)
 			System.out.println("Inserting offspring took " + (System.nanoTime() - time) / 1000000 + "ms");
 		
@@ -72,22 +80,6 @@ public abstract class GeneticAlgorithm implements IGeneticAlgorithm {
 			System.out.println("Ran generation in " + (System.nanoTime() - globalTime) / 1000000 + "ms");
 		
 		generationsRan++;
-	}
-	
-	@Override
-	public void insertOffspring(List<IIndividual> offspring) {
-		// No elitism - replace whole population
-		if(getElites() == 0) {
-			getPopulation().getIndividuals().clear();
-			getPopulation().getIndividuals().addAll(offspring);
-		}
-		// Elitism - replace population except n best
-		else {
-			((SimplePopulation) getPopulation()).putElitesFirst(getElites());
-			for(int i = 0; i < offspring.size(); i++) {
-				getPopulation().getIndividuals().set(getElites() + i, offspring.get(i));
-			}
-		}
 	}
 	
 	/**
