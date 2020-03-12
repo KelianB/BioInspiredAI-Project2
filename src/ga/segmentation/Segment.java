@@ -3,8 +3,6 @@ package ga.segmentation;
 import java.util.ArrayList;
 import java.util.List;
 
-import problem.segmentation.ProblemInstance;
-
 /**
  * Represents a segment in the context of image segmentation.
  * @author Kelian Baert & Caroline de Pourtales

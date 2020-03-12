@@ -1,4 +1,4 @@
-package problem;
+package ga;
 
 /**
  * Interface used to represent a problem instance.

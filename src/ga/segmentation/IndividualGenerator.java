@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import ga.segmentation.Individual.Direction;
-import problem.segmentation.ProblemInstance;
 import utils.FastPrimMST;
 import utils.Tree;
 
@@ -70,11 +69,6 @@ public class IndividualGenerator {
 		// Begin recursive segmentation from the tree's root vertex
 		segmentChildren(pi, tree, tree.getRootNode(), directions);
 		
-		/*for(Direction d : directions) {
-			if(d == null)
-				System.out.println("NULL DIRECTION IN INITIAL SEGMENTATION");
-		}*/
-		
 		// Break single segment into multiple segment (break the segment where the rgb distance is the highest)
 		
 		// we first go through the tree in order to build a list of all edges in the tree associated with their weight in the graph
@@ -99,8 +93,7 @@ public class IndividualGenerator {
 		// then break the segment
 		for(int i = 0; i < numberOfSegments - 1; i++) {
 			int edge = (int) (ga.random() * edges.size());
-
-			int breakingPoint = /*edges.get(i)*/edges.get(edge).node;
+			int breakingPoint = edges.get(edge).node;
 			directions[breakingPoint] = Direction.NONE;
 			edges.remove(edge);
 		}

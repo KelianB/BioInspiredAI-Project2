@@ -3,8 +3,6 @@ package ga;
 import java.util.List;
 import java.util.Random;
 
-import problem.IProblemInstance;
-
 /**
  * A simple implementation of the IGeneticAlgorithm interface.
  * @author Kelian Baert & Caroline de Pourtales

@@ -7,7 +7,6 @@ import ga.GeneticAlgorithm;
 import ga.IIndividual;
 import ga.IPopulation;
 import main.Main;
-import problem.segmentation.ProblemInstance;
 
 /**
  * A Genetic Algorithm implementation for image segmentation.
@@ -43,6 +42,11 @@ public class SegmentationGA extends GeneticAlgorithm {
 			System.out.println("	Connectivity = " + conn + " (" + beta*conn + ")");
 			System.out.println("	Overall deviation = " + ovdev + " (" + gamma*ovdev + ")");
 		}
+		
+		/*for(IIndividual ii : getPopulation().getIndividuals()) {
+			Individual i = (Individual) ii;
+			System.out.println(i.getEdgeValue() + "," + i.getConnectivity() + "," + i.getOverallDeviation());
+		}*/
 	}
 
 	@Override
@@ -54,7 +58,7 @@ public class SegmentationGA extends GeneticAlgorithm {
 		
 		List<IIndividual> inds = new ArrayList<IIndividual>();
 		for(int i = 0; i < poolSize; i++) {
-			System.out.println("Creating individual #" + i + "/" + poolSize);
+			System.out.println("Creating individual #" + (i+1) + "/" + poolSize);
 			inds.add(IndividualGenerator.createRandomIndividual(this));
 		}
 		inds.sort((a,b) -> (int) Math.signum(b.getFitness() - a.getFitness()));

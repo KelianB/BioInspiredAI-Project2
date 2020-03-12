@@ -7,9 +7,9 @@ import ga.IIndividual;
 import ga.IPopulation;
 import ga.segmentation.Individual;
 import ga.segmentation.IndividualGenerator;
+import ga.segmentation.ProblemInstance;
 import ga.segmentation.SegmentationGA;
 import main.Main;
-import problem.segmentation.ProblemInstance;
 
 public class MultiObjectiveSegmentationGA extends SegmentationGA {
 	public MultiObjectiveSegmentationGA(ProblemInstance problemInstance, float mutationRate, float crossoverRate) {
@@ -25,7 +25,7 @@ public class MultiObjectiveSegmentationGA extends SegmentationGA {
 		
 		List<IIndividual> inds = new ArrayList<IIndividual>();
 		for(int i = 0; i < poolSize; i++) {
-			System.out.println("Creating individual #" + i + "/" + poolSize);
+			System.out.println("Creating individual #" + (i+1) + "/" + poolSize);
 			inds.add(IndividualGenerator.createRandomIndividual(this));
 		}
 		pop.updateFrontsAndCrowdingDistances(inds);
@@ -49,10 +49,6 @@ public class MultiObjectiveSegmentationGA extends SegmentationGA {
 				System.out.println("  firstfront." + i + ": " + ind.getSegments().size() + " segments, fitness = " + ind.getFitness());
 			}
 		}
-		
-		/*for(Individual i : ((MultiObjectivePopulation) getPopulation()).getFirstFront())
-			System.out.println(i.getEdgeValue() + "," + i.getConnectivity() + "," + i.getOverallDeviation());*/
-		
 	}
 	
 	// No fitness-based elitism

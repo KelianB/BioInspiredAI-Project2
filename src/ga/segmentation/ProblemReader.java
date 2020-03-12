@@ -1,4 +1,4 @@
-package problem.segmentation;
+package ga.segmentation;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -6,8 +6,8 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import problem.IProblemReader;
-import problem.segmentation.ProblemInstance.ColorMode;
+import ga.IProblemReader;
+import ga.segmentation.ProblemInstance.ColorMode;
 
 /**
  * Handles reading image segmentation problem instances

@@ -1,7 +1,5 @@
 package ga;
 
-import problem.IProblemInstance;
-
 /**
  * An interface describing a general purpose Genetic Algorithm.
  * @author Kelian Baert & Caroline de Pourtales

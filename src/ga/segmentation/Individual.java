@@ -6,7 +6,6 @@ import java.util.List;
 
 import ga.IIndividual;
 import main.Main;
-import problem.segmentation.ProblemInstance;
 import utils.CachedValue;
 
 /**
@@ -110,8 +109,8 @@ public class Individual implements IIndividual {
 
 	@Override
 	public void mutate() {
-		float r = ga.random();
-		/*if(r < 0.15f) {
+		/*float r = ga.random();
+		if(r < 0.15f) {
 			significantMutation();
 		}
 		/*else if(r < 0.25f) {
@@ -233,7 +232,7 @@ public class Individual implements IIndividual {
 		else {	
 			// Uniform crossover
 			for(int i = 0; i < ind.representation.length; i++)
-				ind.representation[i] = ga.random() < 0.7 ? representation[i] : parentB.representation[i]; 
+				ind.representation[i] = ga.random() < 0.6 ? representation[i] : parentB.representation[i]; 
 		}
 				
 		ind.updateSegmentRepresentation();

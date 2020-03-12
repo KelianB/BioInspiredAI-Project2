@@ -7,8 +7,8 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 import ga.segmentation.Individual;
+import ga.segmentation.ProblemInstance;
 import main.Main;
-import problem.segmentation.ProblemInstance;
 
 /**
  * Contains various utility function that could have a use in any project.

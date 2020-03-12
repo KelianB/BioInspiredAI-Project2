@@ -1,12 +1,12 @@
-package problem.segmentation;
+package ga.segmentation;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import ga.IProblemInstance;
 import ga.segmentation.Individual.Direction;
-import problem.IProblemInstance;
 import utils.ImageUtils;
 import utils.WeightedGraph;
 

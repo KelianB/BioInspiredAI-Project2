@@ -82,9 +82,10 @@ public class MultiObjectivePopulation extends Population {
 		return super.createOffspring();
 	}
 	
+	
 	@Override
 	public void insertOffspring(List<IIndividual> offspring) {
-		// Create or pull of 2n individuals
+		// Create a pool of 2n individuals
 		List<IIndividual> pool = new ArrayList<IIndividual>();
 		pool.addAll(getIndividuals());
 		pool.addAll(offspring);
@@ -97,7 +98,7 @@ public class MultiObjectivePopulation extends Population {
 		// Reject to cull down parent+offspring to n individuals
 		pool.sort(getSelectionComparator());
 		pool = pool.subList(0, getSize());
-
+		
 		setIndividuals(pool);
 		
 		// Update the fronts again so we only have the current population in the fronts storage
@@ -204,14 +205,9 @@ public class MultiObjectivePopulation extends Population {
 		float ia = i.getEdgeValue(), ib = i.getConnectivity(), ic = i.getOverallDeviation();
 		float ja = j.getEdgeValue(), jb = j.getConnectivity(), jc = j.getOverallDeviation();
 		
-		if(ia >= ja && ib > jb && ic > jc)
-			return true;
-		if(ia > ja && ib >= jb && ic > jc)
-			return true;
-		if(ia > ja && ib > jb && ic >= jc)
-			return true;
-		
-		return false;
+		return (ia >= ja && ib > jb  && ic > jc) ||
+			   (ia > ja  && ib >= jb && ic > jc) ||
+			   (ia > ja  && ib > jb  && ic >= jc);
 	}
 	
 	

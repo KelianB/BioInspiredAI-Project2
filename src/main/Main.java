@@ -7,12 +7,12 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import ga.segmentation.Individual;
+import ga.segmentation.ProblemInstance;
+import ga.segmentation.ProblemReader;
 import ga.segmentation.SegmentationGA;
+import ga.segmentation.ProblemInstance.ColorMode;
 import ga.segmentation.multiobjective.MultiObjectivePopulation;
 import ga.segmentation.multiobjective.MultiObjectiveSegmentationGA;
-import problem.segmentation.ProblemInstance;
-import problem.segmentation.ProblemInstance.ColorMode;
-import problem.segmentation.ProblemReader;
 import utils.ImageUtils;
 
 /**
@@ -105,23 +105,32 @@ public class Main {
 		
 		BufferedImage[] images = ImageUtils.generateImages(pi, ind);
 	    try {
+	    	// Create directories
+	    	new File(config.get("evaluationDir")).mkdir();
+	    	new File(config.get("outputDir")).mkdir();
+	    	
 	    	if(!clearedOutputDirs) {
 	    		clearDirectory(new File(config.get("outputDir")));
 	    		clearDirectory(new File(config.get("evaluationDir")));
 	    		clearedOutputDirs = true;
 	    	}
 	    	
+	    	int n = 0;
+	    	String fileSuffix;
+	    	do {
+	    		fileSuffix = numSegments + "seg" + (n==0 ? "" : "_(" + n + ")") + ".png";
+	    		n++;
+	    	} while(new File(config.get("evaluationDir") + "segmentation_" + fileSuffix).exists());
+
+	    	// Save the image for evaluation
+	    	File evalFile = new File(config.get("evaluationDir") + "segmentation_" + fileSuffix);
+	    	ImageIO.write(images[1], "png", evalFile);
+	    	
 	    	// Save both images in the output directory
 	    	for(int i = 0; i < images.length; i++) {
-	    		File file = new File(config.get("outputDir") + "segmentation_" + numSegments + "_" + (i+1) + ".png");
-	    		file.mkdirs();
+	    		File file = new File(config.get("outputDir") + "segmentation_" + (i+1) + "_" + fileSuffix);
 	    		ImageIO.write(images[i], "png", file);
 	    	}
-	    	
-	    	// Also save the image for evaluation
-	    	File evalFile = new File(config.get("evaluationDir") + "segmentation_" + numSegments + ".png");
-	    	evalFile.mkdir();
-	    	ImageIO.write(images[1], "png", evalFile);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
