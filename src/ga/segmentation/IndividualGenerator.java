@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import ga.segmentation.Individual.Direction;
+import main.Main;
 import utils.FastPrimMST;
 import utils.Tree;
 
@@ -84,7 +85,10 @@ public class IndividualGenerator {
 			}
 		}
 		
-		int numberOfSegments = 5 + (int) (ga.random() * 30);
+		int minSegments = Main.config.getInt("minInitialSegments"),
+			maxSegments = Main.config.getInt("maxInitialSegments");
+		
+		int numberOfSegments = minSegments + (int) (ga.random() * (maxSegments - minSegments));
 
 		// then sort the edges by decreasing weight and keep only the edges with good enough weight
 		edges.sort((a,b) -> (int) Math.signum(b.weight - a.weight));	
